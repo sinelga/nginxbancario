@@ -2470,3 +2470,23 @@ build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart 
 
 build.dart finished [3035 ms]
 
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [2155 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1115 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1080 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart --changed=deploy/dartapp.dart.j...
+
+build.dart finished [2327 ms]
+
