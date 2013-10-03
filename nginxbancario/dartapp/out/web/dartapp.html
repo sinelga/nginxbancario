@@ -1,65 +1,72 @@
 <!DOCTYPE html><html><head>
     <meta charset="utf-8">
-    <title>Sample app</title>
-    <link rel="stylesheet" href="dartapp.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
-    <!-- import the click-counter -->
+    <title>Finance</title>
     
-    
+   <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
+   
+    <!--<link rel="stylesheet" href="dartapp.css"> -->
+  
+   
     <!-- This is the bootstrap script for Polymer. 
          Use this INSTEAD of dart.js -->
     
   </head>
   <body><script src="packages/shadow_dom/shadow_dom.debug.js"></script>
-<script src="packages/browser/interop.js"></script>
-<polymer-element name="click-counter" attributes="count">
+<polymer-element name="rss-feed" attributes="rssfeedarr">
   <template>
-    <style>
-      div {
-        font-size: 24pt;
-        text-align: center;
-        margin-top: 140px;
-      }
-      button {
-        font-size: 24pt;
-        margin-bottom: 20px;
-      }
-    </style>
-    <div>
-      <button on-click="increment">Click me</button><br>
-      <span>(click count: {{count}})</span>
-    </div>
-  </template>
-  
-</polymer-element><polymer-element name="rssfeed">
-  <template>
+   
+      <div class="panel panel-default">
+      <div class="panel-heading">Politica</div>
+      
+      <div class="panel-body">
+        <p></p>
+      </div>
+      
+      <template repeat="{{rssfeed in rssfeedarr}}">
+      
+             <span class="help-block">
+        {{rssfeed.pubDate}}
+         </span>
+        <div class="well">
+        <dl>
+          <dt> {{rssfeed.title}}</dt>
+          <dd> {{rssfeed.description}} </dd> 
+        </dl>
+        </div>
 
-    <h1>lslslslsls</h1>
-    <button on-click="increment">Click me</button><br>
-
+        
+      </template>   
+          
+      </div>
   </template>
   
 </polymer-element>
-    <h1>Dartapp</h1>
+ 
+    <div class="row">
+      <div class="col-lg-2">
+      </div>
+      <div class="col-lg-8">
+        <template id="rss" bind="">      
+          <rss-feed rssfeedarr="{{}}"></rss-feed>      
+        </template>
+      </div>
+      <div class="col-lg-2">
+        <script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- skyscraper120x600 -->
+<ins class="adsbygoogle" style="display:inline-block;width:120px;height:600px" data-ad-client="ca-pub-4265026941264081" data-ad-slot="8192628653"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>    
+      </div>      
     
-    <p>Hello world from Dart!</p>
-   
-   <!-- 
-    <div id="sample_container_id">
-      <template id="tmpl" bind>
-        <click-counter count="{{}}"></click-counter>
-      </template>
     </div>
     
-    -->
-    <template id="rss" bind="">
-      
-      <rss-feed></rss-feed>
-      
-     </template> 
-    
-
-    
+    <script src="packages/browser/interop.js"></script>
+    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
   
 
 <script type="application/dart" src="dartapp.html_bootstrap.dart"></script><script src="packages/browser/dart.js"></script></body></html>

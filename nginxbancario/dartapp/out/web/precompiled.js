@@ -215,13 +215,25 @@ PlainJavaScriptObject: {"": "JavaScriptObject;"},
 UnknownJavaScriptObject: {"": "JavaScriptObject;"},
 
 JSArray: {"": "List/Interceptor;",
+  forEach$1: function(receiver, f) {
+    return H.IterableMixinWorkaround_forEach(receiver, f);
+  },
+  elementAt$1: function(receiver, index) {
+    if (index >>> 0 !== index || index >= receiver.length)
+      throw H.ioore(receiver, index);
+    return receiver[index];
+  },
   toString$0: function(receiver) {
     return H.IterableMixinWorkaround_toStringIterable(receiver, "[", "]");
+  },
+  get$iterator: function(receiver) {
+    return new H.ListIterator(receiver, receiver.length, 0, null);
   },
   get$length: function(receiver) {
     return receiver.length;
   },
-  $isList: true
+  $isList: true,
+  $asInterceptor: null
 },
 
 JSMutableArray: {"": "JSArray;",
@@ -251,9 +263,9 @@ JSDouble: {"": "double/JSNumber;", $isnum: true},
 JSString: {"": "String/Interceptor;",
   codeUnitAt$1: function(receiver, index) {
     if (index < 0)
-      throw H.wrapException(new P.RangeError("value " + index));
+      throw H.wrapException(new P.RangeError("value " + H.S(index)));
     if (index >= receiver.length)
-      throw H.wrapException(new P.RangeError("value " + index));
+      throw H.wrapException(new P.RangeError("value " + H.S(index)));
     return receiver.charCodeAt(index);
   },
   substring$2: function(receiver, startIndex, endIndex) {
@@ -263,12 +275,12 @@ JSString: {"": "String/Interceptor;",
       H.throwExpression(new P.ArgumentError(endIndex));
     if (startIndex < 0)
       throw H.wrapException(new P.RangeError("value " + startIndex));
-    if (endIndex == null)
+    if (typeof endIndex !== "number")
       throw H.iae(endIndex);
     if (startIndex > endIndex)
       throw H.wrapException(new P.RangeError("value " + startIndex));
     if (endIndex > receiver.length)
-      throw H.wrapException(new P.RangeError("value " + endIndex));
+      throw H.wrapException(new P.RangeError("value " + H.S(endIndex)));
     return receiver.substring(startIndex, endIndex);
   },
   substring$1: function($receiver, startIndex) {
@@ -283,6 +295,17 @@ JSString: {"": "String/Interceptor;",
   $isString: true
 }}],
 ["_js_helper", "dart:_js_helper", , H, {
+isJsIndexable: function(object, record) {
+  var result, t1;
+  if (record != null) {
+    result = record.x;
+    if (result != null)
+      return result;
+  }
+  t1 = J.getInterceptor(object);
+  return typeof object === "object" && object !== null && !!t1.$isJavaScriptIndexingBehavior;
+},
+
 S: function(value) {
   var res;
   if (typeof value === "string")
@@ -398,10 +421,25 @@ throwCyclicInit: function(staticName) {
   throw H.wrapException(new P.CyclicInitializationError("Cyclic initialization for static " + H.S(staticName)));
 },
 
+setRuntimeTypeInfo: function(target, typeInfo) {
+  if (target != null)
+    target.$builtinTypeInfo = typeInfo;
+  return target;
+},
+
 getRuntimeTypeInfo: function(target) {
   if (target == null)
     return;
   return target.$builtinTypeInfo;
+},
+
+getRuntimeTypeArguments: function(target, substitutionName) {
+  return H.substitute(target["$as" + H.S(substitutionName)], H.getRuntimeTypeInfo(target));
+},
+
+getRuntimeTypeArgument: function(target, substitutionName, index) {
+  var $arguments = H.getRuntimeTypeArguments(target, substitutionName);
+  return $arguments == null ? null : $arguments[index];
 },
 
 runtimeTypeToString: function(type) {
@@ -433,6 +471,23 @@ joinArguments: function(types, startIndex) {
     buffer._contents = buffer._contents + str;
   }
   return allDynamic ? "" : "<" + H.S(buffer) + ">";
+},
+
+substitute: function(substitution, $arguments) {
+  if (typeof substitution === "object" && substitution !== null && substitution.constructor === Array)
+    $arguments = substitution;
+  else if (typeof substitution == "function") {
+    substitution = H.invokeOn(substitution, null, $arguments);
+    if (typeof substitution === "object" && substitution !== null && substitution.constructor === Array)
+      $arguments = substitution;
+    else if (typeof substitution == "function")
+      $arguments = H.invokeOn(substitution, null, $arguments);
+  }
+  return $arguments;
+},
+
+invokeOn: function($function, receiver, $arguments) {
+  return $function.apply(receiver, $arguments);
 },
 
 typeNameInChrome: function(obj) {
@@ -630,6 +685,52 @@ makeLeafDispatchRecord: function(interceptor) {
   return J.makeDispatchRecord(interceptor, false, null, !!interceptor.$isJavaScriptIndexingBehavior);
 },
 
+ConstantMap: {"": "Object;",
+  toString$0: function(_) {
+    return P.Maps_mapToString(this);
+  }
+},
+
+ConstantStringMap: {"": "ConstantMap;length>,_jsObject,_keys",
+  containsKey$1: function(key) {
+    if (typeof key !== "string")
+      return false;
+    if (key === "__proto__")
+      return false;
+    return this._jsObject.hasOwnProperty(key);
+  },
+  $index: function(_, key) {
+    if (typeof key !== "string")
+      return;
+    if (!this.containsKey$1(key))
+      return;
+    return this._jsObject[key];
+  },
+  forEach$1: function(_, f) {
+    J.forEach$1$ax(this._keys, new H.ConstantStringMap_forEach_closure(this, f));
+  },
+  get$keys: function() {
+    var t1 = new H._ConstantMapKeyIterable(this);
+    H.setRuntimeTypeInfo(t1, [H.getRuntimeTypeArgument(this, "ConstantStringMap", 0)]);
+    return t1;
+  },
+  $asConstantMap: null
+},
+
+ConstantStringMap_forEach_closure: {"": "Closure;this_0,f_1",
+  call$1: function(key) {
+    var t1 = this.this_0;
+    return this.f_1.call$2(key, t1.$index(t1, key));
+  }
+},
+
+_ConstantMapKeyIterable: {"": "IterableBase;_map",
+  get$iterator: function(_) {
+    return J.get$iterator$ax(this._map._keys);
+  },
+  $asIterableBase: null
+},
+
 invokeClosure_closure: {"": "Closure;closure_0",
   call$0: function() {
     return this.closure_0.call$0();
@@ -667,10 +768,13 @@ TypeImpl: {"": "Object;_typeName,_unmangledName",
     return unmangledName;
   },
   $eq: function(_, other) {
+    var t1;
     if (other == null)
       return false;
-    return false;
-  }
+    t1 = J.getInterceptor(other);
+    return typeof other === "object" && other !== null && !!t1.$isTypeImpl && J.$eq(this._typeName, other._typeName);
+  },
+  $isTypeImpl: true
 },
 
 applyExperimentalFixup_newGetTagDartFunction: {"": "Closure;newGetTagJSFunction_0",
@@ -679,6 +783,12 @@ applyExperimentalFixup_newGetTagDartFunction: {"": "Closure;newGetTagJSFunction_
   }
 }}],
 ["dart._collection.dev", "dart:_collection-dev", , H, {
+IterableMixinWorkaround_forEach: function(iterable, f) {
+  var t1;
+  for (t1 = new H.ListIterator(iterable, iterable.length, 0, null); t1.moveNext$0();)
+    f.call$1(t1._liblib$_current);
+},
+
 IterableMixinWorkaround_toStringIterable: function(iterable, leftDelimiter, rightDelimiter) {
   var result, i, t1;
   for (i = 0; i < $.get$IterableMixinWorkaround__toStringList().length; ++i) {
@@ -703,40 +813,281 @@ IterableMixinWorkaround_toStringIterable: function(iterable, leftDelimiter, righ
   return result.get$_contents();
 },
 
-ListIterator: {"": "Object;_iterable,_length,_index,_current",
+ListIterator: {"": "Object;_iterable,_liblib$_length,_index,_liblib$_current",
+  get$current: function() {
+    return this._liblib$_current;
+  },
   moveNext$0: function() {
-    var t1, $length, t2;
+    var t1, t2, $length, t3;
     t1 = this._iterable;
-    $length = t1.length;
-    if (this._length !== $length)
+    t2 = J.getInterceptor$asx(t1);
+    $length = t2.get$length(t1);
+    if (this._liblib$_length !== $length)
       throw H.wrapException(new P.ConcurrentModificationError(t1));
-    t2 = this._index;
-    if (t2 >= $length) {
-      this._current = null;
+    t3 = this._index;
+    if (t3 >= $length) {
+      this._liblib$_current = null;
       return false;
     }
-    if (t2 < 0)
-      throw H.ioore(t1, t2);
-    this._current = t1[t2];
+    this._liblib$_current = t2.elementAt$1(t1, t3);
     this._index = this._index + 1;
     return true;
   }
+},
+
+MappedIterable: {"": "IterableBase;_iterable,_f",
+  get$iterator: function(_) {
+    var t1 = this._iterable;
+    t1 = t1.get$iterator(t1);
+    t1 = new H.MappedIterator(null, t1, this._f);
+    H.setRuntimeTypeInfo(t1, [H.getRuntimeTypeArgument(this, "MappedIterable", 0), H.getRuntimeTypeArgument(this, "MappedIterable", 1)]);
+    return t1;
+  },
+  get$length: function(_) {
+    var t1 = this._iterable;
+    return t1.get$length(t1);
+  },
+  $asIterableBase: function($S, $T) {
+    return [$T];
+  }
+},
+
+MappedIterator: {"": "Iterator;_liblib$_current,_iterator,_f",
+  _f$1: function(arg0) {
+    return this._f.call$1(arg0);
+  },
+  moveNext$0: function() {
+    var t1 = this._iterator;
+    if (t1.moveNext$0()) {
+      this._liblib$_current = this._f$1(t1.get$current());
+      return true;
+    }
+    this._liblib$_current = null;
+    return false;
+  },
+  get$current: function() {
+    return this._liblib$_current;
+  },
+  $asIterator: function($S, $T) {
+    return [$T];
+  }
+},
+
+WhereIterable: {"": "IterableBase;_iterable,_f",
+  get$iterator: function(_) {
+    var t1 = J.get$iterator$ax(this._iterable);
+    t1 = new H.WhereIterator(t1, this._f);
+    H.setRuntimeTypeInfo(t1, [H.getRuntimeTypeArgument(this, "WhereIterable", 0)]);
+    return t1;
+  },
+  $asIterableBase: null
+},
+
+WhereIterator: {"": "Iterator;_iterator,_f",
+  _f$1: function(arg0) {
+    return this._f.call$1(arg0);
+  },
+  moveNext$0: function() {
+    for (var t1 = this._iterator; t1.moveNext$0();)
+      if (this._f$1(t1.get$current()) === true)
+        return true;
+    return false;
+  },
+  get$current: function() {
+    return this._iterator.get$current();
+  },
+  $asIterator: null
 }}],
 ["dart._js_names", "dart:_js_names", , H, {
 unmangleGlobalNameIfPreservedAnyways: function($name) {
   return init.mangledGlobalNames[$name];
+}}],
+["dart.collection", "dart:collection", , P, {
+Maps_mapToString: function(m) {
+  var t1, result, i, t2;
+  t1 = {};
+  for (i = 0; i < $.get$Maps__toStringList().length; ++i) {
+    t2 = $.get$Maps__toStringList();
+    if (i >= t2.length)
+      throw H.ioore(t2, i);
+    if (t2[i] === m)
+      return "{...}";
+  }
+  result = P.StringBuffer$("");
+  try {
+    $.get$Maps__toStringList().push(m);
+    result.write$1("{");
+    t1.first_0 = true;
+    J.forEach$1$ax(m, new P.Maps_mapToString_closure(t1, result));
+    result.write$1("}");
+  } finally {
+    t1 = $.get$Maps__toStringList();
+    if (0 >= t1.length)
+      throw H.ioore(t1, 0);
+    t1.pop();
+  }
+  return result.get$_contents();
+},
+
+IterableBase: {"": "Object;",
+  map$1: function(_, f) {
+    var t1 = new H.MappedIterable(this, f);
+    H.setRuntimeTypeInfo(t1, [H.getRuntimeTypeArgument(this, "IterableBase", 0), null]);
+    return t1;
+  },
+  forEach$1: function(_, f) {
+    var t1;
+    for (t1 = this.get$iterator(this); t1.moveNext$0();)
+      f.call$1(t1.get$current());
+  },
+  join$1: function(_, separator) {
+    var iterator, buffer, t1;
+    iterator = this.get$iterator(this);
+    if (!iterator.moveNext$0())
+      return "";
+    buffer = P.StringBuffer$("");
+    if (separator === "")
+      do {
+        t1 = H.S(iterator.get$current());
+        buffer._contents = buffer._contents + t1;
+      } while (iterator.moveNext$0());
+    else {
+      buffer.write$1(H.S(iterator.get$current()));
+      for (; iterator.moveNext$0();) {
+        buffer._contents = buffer._contents + separator;
+        t1 = H.S(iterator.get$current());
+        buffer._contents = buffer._contents + t1;
+      }
+    }
+    return buffer._contents;
+  },
+  get$length: function(_) {
+    var it, count;
+    it = this.get$iterator(this);
+    for (count = 0; it.moveNext$0();)
+      ++count;
+    return count;
+  },
+  elementAt$1: function(_, index) {
+    var t1, remaining, element;
+    if (typeof index !== "number" || Math.floor(index) !== index || index < 0)
+      throw H.wrapException(new P.RangeError("value " + H.S(index)));
+    for (t1 = this.get$iterator(this), remaining = index; t1.moveNext$0();) {
+      element = t1.get$current();
+      if (remaining === 0)
+        return element;
+      --remaining;
+    }
+    throw H.wrapException(new P.RangeError("value " + H.S(index)));
+  }
+},
+
+ListBase: {"": "Object+ListMixin;"},
+
+ListMixin: {"": "Object;",
+  get$iterator: function(receiver) {
+    return new H.ListIterator(receiver, this.get$length(receiver), 0, null);
+  },
+  elementAt$1: function(receiver, index) {
+    return this.$index(receiver, index);
+  },
+  forEach$1: function(receiver, action) {
+    var $length, i;
+    if (typeof receiver !== "string" && (typeof receiver !== "object" || receiver === null || receiver.constructor !== Array && !H.isJsIndexable(receiver, receiver[init.dispatchPropertyName])))
+      return this.forEach$1$bailout(1, action, receiver);
+    $length = receiver.length;
+    for (i = 0; i < $length; ++i) {
+      if (i >= receiver.length)
+        throw H.ioore(receiver, i);
+      action.call$1(receiver[i]);
+      if ($length !== receiver.length)
+        throw H.wrapException(new P.ConcurrentModificationError(receiver));
+    }
+  },
+  forEach$1$bailout: function(state0, action, receiver) {
+    var $length, i;
+    $length = this.get$length(receiver);
+    for (i = 0; i < $length; ++i) {
+      action.call$1(this.$index(receiver, i));
+      if ($length !== this.get$length(receiver))
+        throw H.wrapException(new P.ConcurrentModificationError(receiver));
+    }
+  },
+  where$1: function(receiver, test) {
+    var t1 = new H.WhereIterable(receiver, test);
+    H.setRuntimeTypeInfo(t1, [H.getRuntimeTypeArgument(receiver, "ListMixin", 0)]);
+    return t1;
+  },
+  toString$0: function(receiver) {
+    var result, i, t1;
+    for (i = 0; i < $.get$ListMixin__toStringList().length; ++i) {
+      t1 = $.get$ListMixin__toStringList();
+      if (i >= t1.length)
+        throw H.ioore(t1, i);
+      if (t1[i] === receiver)
+        return "[...]";
+    }
+    result = P.StringBuffer$("");
+    try {
+      $.get$ListMixin__toStringList().push(receiver);
+      result.write$1("[");
+      result.writeAll$2(receiver, ", ");
+      result.write$1("]");
+    } finally {
+      t1 = $.get$ListMixin__toStringList();
+      if (0 >= t1.length)
+        throw H.ioore(t1, 0);
+      t1.pop();
+    }
+    return result.get$_contents();
+  }
+},
+
+Maps_mapToString_closure: {"": "Closure;box_0,result_1",
+  call$2: function(k, v) {
+    var t1 = this.box_0;
+    if (!t1.first_0)
+      this.result_1.write$1(", ");
+    t1.first_0 = false;
+    t1 = this.result_1;
+    t1.write$1(k);
+    t1.write$1(": ");
+    t1.write$1(v);
+  }
 }}],
 ["dart.core", "dart:core", , P, {
 Error_safeToString: function(object) {
   return H.Primitives_objectToString(object);
 },
 
-List_List: function($length) {
+List_List: function($length, $E) {
   if ($length == null)
     return new Array(0);
   if (typeof $length !== "number" || Math.floor($length) !== $length || $length < 0)
     throw H.wrapException(new P.ArgumentError("Length must be a positive integer: " + H.S($length) + "."));
   return H.Primitives_newFixedList($length);
+},
+
+List_List$from: function(other, growable, $E) {
+  var list, t1, $length, fixedList, t2, i, t3;
+  list = P.List_List(null, $E);
+  H.setRuntimeTypeInfo(list, [$E]);
+  for (t1 = J.get$iterator$ax(other); t1.moveNext$0();)
+    list.push(t1.get$current());
+  if (growable)
+    return list;
+  $length = list.length;
+  fixedList = P.List_List($length, $E);
+  H.setRuntimeTypeInfo(fixedList, [$E]);
+  for (t1 = list.length, t2 = fixedList.length, i = 0; i < $length; ++i) {
+    if (i >= t1)
+      throw H.ioore(list, i);
+    t3 = list[i];
+    if (i >= t2)
+      throw H.ioore(fixedList, i);
+    fixedList[i] = t3;
+  }
+  return fixedList;
 },
 
 Error: {"": "Object;"},
@@ -762,6 +1113,12 @@ RangeError: {"": "ArgumentError;message",
   }
 },
 
+UnsupportedError: {"": "Error;message",
+  toString$0: function(_) {
+    return "Unsupported operation: " + this.message;
+  }
+},
+
 ConcurrentModificationError: {"": "Error;modifiedObject",
   toString$0: function(_) {
     return "Concurrent modification during iteration: " + P.Error_safeToString(this.modifiedObject) + ".";
@@ -779,6 +1136,8 @@ _ExceptionImplementation: {"": "Object;message",
     return "Exception: " + this.message;
   }
 },
+
+Iterator: {"": "Object;"},
 
 Null: {"": "Object;",
   toString$0: function(_) {
@@ -810,20 +1169,20 @@ StringBuffer: {"": "Object;_contents<",
   },
   writeAll$2: function(objects, separator) {
     var iterator, str;
-    iterator = new H.ListIterator(objects, objects.length, 0, null);
+    iterator = J.get$iterator$ax(objects);
     if (!iterator.moveNext$0())
       return;
     if (separator.length === 0)
       do {
-        str = iterator._current;
+        str = iterator.get$current();
         str = typeof str === "string" ? str : H.S(str);
         this._contents = this._contents + str;
       } while (iterator.moveNext$0());
     else {
-      this.write$1(iterator._current);
+      this.write$1(iterator.get$current());
       for (; iterator.moveNext$0();) {
         this._contents = this._contents + separator;
-        str = iterator._current;
+        str = iterator.get$current();
         str = typeof str === "string" ? str : H.S(str);
         this._contents = this._contents + str;
       }
@@ -844,11 +1203,301 @@ StringBuffer$: function($content) {
 
 }}],
 ["dart.dom.html", "dart:html", , W, {
+TemplateElement_decorate: function(template, instanceRef) {
+  var t1, isNative, liftContents, templateElement, liftRoot;
+  t1 = J.getInterceptor$x(template);
+  if (t1.get$_templateIsDecorated(template) === true)
+    return false;
+  W.TemplateElement__injectStylesheet();
+  t1.set$_templateIsDecorated(template, true);
+  isNative = typeof template === "object" && template !== null && !!t1.$isTemplateElement;
+  liftContents = !isNative;
+  if (liftContents && t1.get$_isAttributeTemplate(template)) {
+    templateElement = W.TemplateElement__extractTemplateFromAttributeTemplate(template);
+    templateElement._templateIsDecorated = true;
+    t1 = J.getInterceptor(templateElement);
+    isNative = typeof templateElement === "object" && templateElement !== null && !!t1.$isTemplateElement;
+    liftRoot = true;
+  } else {
+    templateElement = template;
+    liftRoot = false;
+  }
+  if (!isNative) {
+    t1 = J.getInterceptor$x(templateElement);
+    t1.set$_templateContent(templateElement, W.TemplateElement__getTemplateContentsOwner(t1.get$document(templateElement)).createDocumentFragment());
+  }
+  if (liftContents)
+    W.TemplateElement__liftNonNativeChildrenIntoContent(templateElement, template, liftRoot);
+  else
+    W.TemplateElement_bootstrap(J.get$content$x(templateElement));
+  return true;
+},
+
+TemplateElement__getTemplateContentsOwner: function(doc) {
+  var t1, d, t2, t3;
+  if (W._convertNativeToDart_Window(doc.defaultView) == null)
+    return doc;
+  t1 = J.getInterceptor$x(doc);
+  d = t1.get$_templateContentsOwner(doc);
+  if (d == null) {
+    d = doc.implementation.createHTMLDocument("");
+    for (; t2 = d.lastChild, t2 != null;) {
+      t2.remove$0;
+      t3 = t2.parentNode;
+      if (t3 != null)
+        t3.removeChild(t2);
+    }
+    t1.set$_templateContentsOwner(doc, d);
+  }
+  return d;
+},
+
+TemplateElement__extractTemplateFromAttributeTemplate: function(el) {
+  var template, t1, $name, t2, value;
+  template = el.ownerDocument.createElement("template");
+  el.parentNode.insertBefore(template, el);
+  for (t1 = new W._ElementAttributeMap(el).get$keys(), t1 = P.List_List$from(t1, true, H.getRuntimeTypeArgument(t1, "JSArray", 0)), t1 = new H.ListIterator(t1, t1.length, 0, null); t1.moveNext$0();) {
+    $name = t1._liblib$_current;
+    switch ($name) {
+      case "template":
+        t2 = new W._ElementAttributeMap(el)._element;
+        t2.getAttribute($name);
+        t2.removeAttribute($name);
+        break;
+      case "repeat":
+      case "bind":
+      case "ref":
+        template.get$attributes;
+        t2 = new W._ElementAttributeMap(el)._element;
+        value = t2.getAttribute($name);
+        t2.removeAttribute($name);
+        new W._ElementAttributeMap(template)._element.setAttribute($name, value);
+        break;
+      default:
+    }
+  }
+  return template;
+},
+
+TemplateElement__liftNonNativeChildrenIntoContent: function(template, el, useRoot) {
+  var $content, t1, child;
+  $content = J.get$content$x(template);
+  if (useRoot) {
+    J.append$1$x($content, el);
+    return;
+  }
+  for (t1 = J.getInterceptor$x($content); child = el.firstChild, child != null;)
+    t1.append$1($content, child);
+},
+
+TemplateElement_bootstrap: function($content) {
+  var descendents = J.queryAll$1$x($content, $.get$TemplateElement__allTemplatesSelectors());
+  descendents.forEach$1(descendents, new W.TemplateElement_bootstrap__bootstrap());
+},
+
+TemplateElement__injectStylesheet: function() {
+  if ($.TemplateElement__initStyles === true)
+    return;
+  $.TemplateElement__initStyles = true;
+  var style = document.createElement("style");
+  style.textContent = "template,\nthead[template],\ntbody[template],\ntfoot[template],\nth[template],\ntr[template],\ntd[template],\ncaption[template],\ncolgroup[template],\ncol[template],\noption[template] {\n  display: none;\n}";
+  document.head.appendChild(style);
+},
+
+_convertNativeToDart_Window: function(win) {
+  if (win == null)
+    return;
+  return W._DOMWindowCrossFrame__createSafe(win);
+},
+
+_FrozenElementList: {"": "ListBase;_nodeList,_elementList",
+  get$length: function(_) {
+    return this._nodeList.length;
+  },
+  $index: function(_, index) {
+    var t1;
+    if (index !== (index | 0))
+      return this.$$index$bailout(1, index);
+    t1 = this._nodeList;
+    if (index < 0 || index >= t1.length)
+      throw H.ioore(t1, index);
+    return t1[index];
+  },
+  $$index$bailout: function(state0, index) {
+    var t1 = this._nodeList;
+    if (index >>> 0 !== index || index >= t1.length)
+      throw H.ioore(t1, index);
+    return t1[index];
+  },
+  _FrozenElementList$_wrap$1: function(_nodeList, $T) {
+    var t1 = C.NodeList_methods.where$1(this._nodeList, new W._FrozenElementList$_wrap_closure());
+    this._elementList = P.List_List$from(t1, true, H.getRuntimeTypeArgument(t1, "IterableBase", 0));
+  },
+  $asListBase: null,
+  static: {
+_FrozenElementList$_wrap: function(_nodeList, $T) {
+  var t1 = new W._FrozenElementList(_nodeList, null);
+  H.setRuntimeTypeInfo(t1, [$T]);
+  t1._FrozenElementList$_wrap$1(_nodeList, $T);
+  return t1;
+}}
+
+},
+
+_FrozenElementList$_wrap_closure: {"": "Closure;",
+  call$1: function(e) {
+    var t1 = J.getInterceptor(e);
+    return typeof e === "object" && e !== null && !!t1.$isElement;
+  }
+},
+
+Interceptor_ListMixin: {"": "Interceptor+ListMixin;"},
+
+Interceptor_ListMixin_ImmutableListMixin: {"": "Interceptor_ListMixin+ImmutableListMixin;"},
+
+closure: {"": "Closure;",
+  call$1: function(node) {
+    throw H.wrapException(new P.UnsupportedError("The MDV package is not available. You can enable it with `import 'package:mdv/mdv.dart' as mdv;` and `mdv.initialize()`"));
+  }
+},
+
+TemplateElement_bootstrap__bootstrap: {"": "Closure;",
+  call$1: function(template) {
+    if (!W.TemplateElement_decorate(template, null))
+      W.TemplateElement_bootstrap(J.get$content$x(template));
+  }
+},
+
+closure0: {"": "Closure;",
+  call$1: function(k) {
+    return H.S(k) + "[template]";
+  }
+},
+
+Interceptor_ListMixin0: {"": "Interceptor+ListMixin;"},
+
+Interceptor_ListMixin_ImmutableListMixin0: {"": "Interceptor_ListMixin0+ImmutableListMixin;"},
+
+_AttributeMap: {"": "Object;",
+  forEach$1: function(_, f) {
+    var t1, key;
+    for (t1 = this.get$keys(), t1 = new H.ListIterator(t1, t1.length, 0, null); t1.moveNext$0();) {
+      key = t1._liblib$_current;
+      f.call$2(key, this.$index(this, key));
+    }
+  },
+  get$keys: function() {
+    var attributes, keys, len, i;
+    attributes = this._element.attributes;
+    keys = P.List_List(null, J.JSString);
+    H.setRuntimeTypeInfo(keys, [J.JSString]);
+    for (len = attributes.length, i = 0; i < len; ++i) {
+      if (i >= attributes.length)
+        throw H.ioore(attributes, i);
+      if (this._matches$1(attributes[i])) {
+        if (i >= attributes.length)
+          throw H.ioore(attributes, i);
+        keys.push(J.get$name$x(attributes[i]));
+      }
+    }
+    return keys;
+  }
+},
+
+_ElementAttributeMap: {"": "_AttributeMap;_element",
+  $index: function(_, key) {
+    return this._element.getAttribute(key);
+  },
+  get$length: function(_) {
+    return this.get$keys().length;
+  },
+  _matches$1: function(node) {
+    return node.namespaceURI == null;
+  }
+},
+
+ImmutableListMixin: {"": "Object;",
+  get$iterator: function(receiver) {
+    return W.FixedSizeListIterator$(receiver);
+  }
+},
+
+FixedSizeListIterator: {"": "Object;_array,_length,_position,_current",
+  moveNext$0: function() {
+    var nextPosition, t1;
+    nextPosition = this._position + 1;
+    t1 = this._length;
+    if (nextPosition < t1) {
+      t1 = this._array;
+      if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !H.isJsIndexable(t1, t1[init.dispatchPropertyName])))
+        return this.moveNext$0$bailout(1, nextPosition, t1);
+      if (nextPosition >>> 0 !== nextPosition || nextPosition >= t1.length)
+        throw H.ioore(t1, nextPosition);
+      this._current = t1[nextPosition];
+      this._position = nextPosition;
+      return true;
+    }
+    this._current = null;
+    this._position = t1;
+    return false;
+  },
+  moveNext$0$bailout: function(state0, nextPosition, t1) {
+    switch (state0) {
+      case 0:
+        nextPosition = this._position + 1;
+        t1 = this._length;
+      case 1:
+        if (state0 === 1 || state0 === 0 && nextPosition < t1)
+          switch (state0) {
+            case 0:
+              t1 = this._array;
+            case 1:
+              state0 = 0;
+              this._current = J.$index$asx(t1, nextPosition);
+              this._position = nextPosition;
+              return true;
+          }
+        this._current = null;
+        this._position = t1;
+        return false;
+    }
+  },
+  get$current: function() {
+    return this._current;
+  },
+  static: {
+FixedSizeListIterator$: function(array) {
+  return new W.FixedSizeListIterator(array, J.get$length$asx(array), -1, null);
+}}
+
+},
+
+_DOMWindowCrossFrame: {"": "Object;_window", static: {
+_DOMWindowCrossFrame__createSafe: function(w) {
+  if (w === window)
+    return w;
+  else
+    return new W._DOMWindowCrossFrame(w);
+}}
+},
+
 HtmlElement: {"": "Element;"},
 
-AnchorElement: {"": "HtmlElement;",
+AnchorElement: {"": "HtmlElement;name=",
   toString$0: function(receiver) {
     return receiver.toString();
+  }
+},
+
+ButtonElement: {"": "HtmlElement;name="},
+
+CharacterData: {"": "Node;length="},
+
+Document: {"": "Node;"},
+
+DocumentFragment: {"": "Node;",
+  queryAll$1: function(receiver, selectors) {
+    return W._FrozenElementList$_wrap(receiver.querySelectorAll(selectors), null);
   }
 },
 
@@ -858,27 +1507,137 @@ DomException: {"": "Interceptor;",
   }
 },
 
-Element: {"": "Node;",
+Element: {"": "Node;_templateContent},_templateIsDecorated%",
   toString$0: function(receiver) {
     return receiver.localName;
-  }
+  },
+  get$content: function(receiver) {
+    this._ensureTemplate$0(receiver);
+    return receiver._templateContent;
+  },
+  set$model: function(receiver, value) {
+    this._ensureTemplate$0(receiver);
+    J.set$model$x($.get$TemplateElement_mdvPackage().call$1(receiver), value);
+  },
+  get$_isAttributeTemplate: function(receiver) {
+    var t1;
+    if (new W._ElementAttributeMap(receiver)._element.hasAttribute("template") === true) {
+      t1 = receiver.localName;
+      t1 = t1 === "option" || t1 === "optgroup" || C.Map_Ai46y.containsKey$1(t1);
+    } else
+      t1 = false;
+    return t1;
+  },
+  _ensureTemplate$0: function(receiver) {
+    if (!(receiver.tagName === "TEMPLATE" || this.get$_isAttributeTemplate(receiver)))
+      throw H.wrapException(new P.UnsupportedError(H.S(receiver) + " is not a template."));
+    W.TemplateElement_decorate(receiver, null);
+  },
+  $isElement: true,
+  $asElement: null
 },
+
+EmbedElement: {"": "HtmlElement;name="},
 
 EventTarget: {"": "Interceptor;"},
 
-FormElement: {"": "HtmlElement;length="},
+FieldSetElement: {"": "HtmlElement;name="},
 
-Node: {"": "EventTarget;",
+FormElement: {"": "HtmlElement;length=,name="},
+
+HtmlDocument: {"": "Document;_templateContentsOwner%"},
+
+IFrameElement: {"": "HtmlElement;name="},
+
+InputElement: {"": "HtmlElement;name=", $isElement: true, $asElement: null},
+
+KeygenElement: {"": "HtmlElement;name="},
+
+MapElement: {"": "HtmlElement;name="},
+
+MetaElement: {"": "HtmlElement;content=,name="},
+
+Node: {"": "EventTarget;document:ownerDocument=",
   toString$0: function(receiver) {
     var t1 = receiver.nodeValue;
     return t1 == null ? J.Interceptor.prototype.toString$0.call(this, receiver) : t1;
+  },
+  append$1: function(receiver, newChild) {
+    return receiver.appendChild(newChild);
   }
 },
 
-SelectElement: {"": "HtmlElement;length="}}],
+NodeList: {"": "Interceptor_ListMixin_ImmutableListMixin;",
+  get$length: function(receiver) {
+    return receiver.length;
+  },
+  $index: function(receiver, index) {
+    var t1 = receiver.length;
+    if (index >>> 0 !== index || index >= t1)
+      throw H.wrapException(new P.RangeError("value " + H.S(index) + " not in range 0.." + t1));
+    return receiver[index];
+  },
+  elementAt$1: function(receiver, index) {
+    if (index >>> 0 !== index || index >= receiver.length)
+      throw H.ioore(receiver, index);
+    return receiver[index];
+  },
+  $asJavaScriptIndexingBehavior: null,
+  $isJavaScriptIndexingBehavior: true
+},
+
+ObjectElement: {"": "HtmlElement;name="},
+
+OutputElement: {"": "HtmlElement;name="},
+
+ParamElement: {"": "HtmlElement;name="},
+
+SelectElement: {"": "HtmlElement;length=,name="},
+
+TemplateElement: {"": "HtmlElement;",
+  get$content: function(receiver) {
+    return receiver.content;
+  },
+  $isTemplateElement: true,
+  $asTemplateElement: null
+},
+
+TextAreaElement: {"": "HtmlElement;name="},
+
+Window: {"": "EventTarget;",
+  get$document: function(receiver) {
+    return receiver.document;
+  },
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+},
+
+_Attr: {"": "Node;name="},
+
+_NamedNodeMap: {"": "Interceptor_ListMixin_ImmutableListMixin0;",
+  get$length: function(receiver) {
+    return receiver.length;
+  },
+  $index: function(receiver, index) {
+    var t1 = receiver.length;
+    if (index >>> 0 !== index || index >= t1)
+      throw H.wrapException(new P.RangeError("value " + H.S(index) + " not in range 0.." + t1));
+    return receiver[index];
+  },
+  elementAt$1: function(receiver, index) {
+    if (index >>> 0 !== index || index >= receiver.length)
+      throw H.ioore(receiver, index);
+    return receiver[index];
+  },
+  $asJavaScriptIndexingBehavior: null,
+  $isJavaScriptIndexingBehavior: true
+}}],
 ["dartapp.dart", "dartapp.dart", , B, {
 main: function() {
-  document.querySelector("#rss");
+  var t1 = document.querySelector("#rss");
+  J._ensureTemplate$0$x(t1);
+  J.set$model$x($.get$TemplateElement_mdvPackage().call$1(t1), 5);
 }},
 1],
 ]);
@@ -930,6 +1689,17 @@ J.getInterceptor$asx = function(receiver) {
     return receiver;
   return J.getNativeInterceptor(receiver);
 };
+J.getInterceptor$ax = function(receiver) {
+  if (receiver == null)
+    return receiver;
+  if (receiver.constructor == Array)
+    return J.JSArray.prototype;
+  if (typeof receiver != "object")
+    return receiver;
+  if (receiver instanceof P.Object)
+    return receiver;
+  return J.getNativeInterceptor(receiver);
+};
 J.getInterceptor$s = function(receiver) {
   if (typeof receiver == "string")
     return J.JSString.prototype;
@@ -939,10 +1709,28 @@ J.getInterceptor$s = function(receiver) {
     return J.UnknownJavaScriptObject.prototype;
   return receiver;
 };
+J.getInterceptor$x = function(receiver) {
+  if (receiver == null)
+    return receiver;
+  if (typeof receiver != "object")
+    return receiver;
+  if (receiver instanceof P.Object)
+    return receiver;
+  return J.getNativeInterceptor(receiver);
+};
 C.C_UnknownJavaScriptObject = new J.UnknownJavaScriptObject();
+Isolate.makeConstantList = function(list) {
+  list.immutable$list = true;
+  list.fixed$length = true;
+  return list;
+};
+C.List_Aia = H.setRuntimeTypeInfo(Isolate.makeConstantList(["caption", "col", "colgroup", "tbody", "td", "tfoot", "th", "thead", "tr"]), [J.JSString]);
+C.Map_Ai46y = H.setRuntimeTypeInfo(new H.ConstantStringMap(9, {caption: null, col: null, colgroup: null, tbody: null, td: null, tfoot: null, th: null, thead: null, tr: null}, C.List_Aia), [null, null]);
+C.NodeList_methods = W.NodeList.prototype;
 $.interceptorsByTag = null;
 $.leafTags = null;
 $.interceptorToTag = null;
+$.TemplateElement__initStyles = null;
 J.$eq = function(receiver, a0) {
   if (receiver == null)
     return a0 == null;
@@ -950,8 +1738,38 @@ J.$eq = function(receiver, a0) {
     return a0 != null && receiver === a0;
   return J.getInterceptor(receiver).$eq(receiver, a0);
 };
+J.$index$asx = function(receiver, a0) {
+  if (receiver.constructor == Array || typeof receiver == "string" || H.isJsIndexable(receiver, receiver[init.dispatchPropertyName]))
+    if (a0 >>> 0 === a0 && a0 < receiver.length)
+      return receiver[a0];
+  return J.getInterceptor$asx(receiver).$index(receiver, a0);
+};
+J._ensureTemplate$0$x = function(receiver) {
+  return J.getInterceptor$x(receiver)._ensureTemplate$0(receiver);
+};
+J.append$1$x = function(receiver, a0) {
+  return J.getInterceptor$x(receiver).append$1(receiver, a0);
+};
+J.forEach$1$ax = function(receiver, a0) {
+  return J.getInterceptor$ax(receiver).forEach$1(receiver, a0);
+};
+J.get$content$x = function(receiver) {
+  return J.getInterceptor$x(receiver).get$content(receiver);
+};
+J.get$iterator$ax = function(receiver) {
+  return J.getInterceptor$ax(receiver).get$iterator(receiver);
+};
 J.get$length$asx = function(receiver) {
   return J.getInterceptor$asx(receiver).get$length(receiver);
+};
+J.get$name$x = function(receiver) {
+  return J.getInterceptor$x(receiver).get$name(receiver);
+};
+J.queryAll$1$x = function(receiver, a0) {
+  return J.getInterceptor$x(receiver).queryAll$1(receiver, a0);
+};
+J.set$model$x = function(receiver, value) {
+  return J.getInterceptor$x(receiver).set$model(receiver, value);
 };
 J.toString$0 = function(receiver) {
   return J.getInterceptor(receiver).toString$0(receiver);
@@ -961,16 +1779,40 @@ Isolate.$lazy($, "getTypeNameOf", "getTypeNameOf", "get$getTypeNameOf", function
   return H.getFunctionForTypeNameOf();
 });
 Isolate.$lazy($, "_toStringList", "IterableMixinWorkaround__toStringList", "get$IterableMixinWorkaround__toStringList", function() {
-  return P.List_List(null);
+  return P.List_List(null, null);
+});
+Isolate.$lazy($, "_toStringList", "ListMixin__toStringList", "get$ListMixin__toStringList", function() {
+  return P.List_List(null, null);
+});
+Isolate.$lazy($, "_toStringList", "Maps__toStringList", "get$Maps__toStringList", function() {
+  return P.List_List(null, null);
+});
+Isolate.$lazy($, "mdvPackage", "TemplateElement_mdvPackage", "get$TemplateElement_mdvPackage", function() {
+  return new W.closure();
+});
+Isolate.$lazy($, "_allTemplatesSelectors", "TemplateElement__allTemplatesSelectors", "get$TemplateElement__allTemplatesSelectors", function() {
+  var t1 = C.Map_Ai46y.get$keys();
+  t1 = t1.map$1(t1, new W.closure0());
+  return "template, option[template], optgroup[template], " + t1.join$1(t1, ", ");
 });
 // Native classes
-H.defineNativeMethods("AutocompleteErrorEvent|DOMError|ErrorEvent|Event|FileError|MediaError|MediaKeyError|NavigatorUserMediaError|PositionError|SQLError|SpeechRecognitionError", J.Interceptor);
+H.defineNativeMethods("AutocompleteErrorEvent|DOMError|DOMImplementation|ErrorEvent|Event|FileError|MediaError|MediaKeyError|Navigator|NavigatorUserMediaError|PositionError|SQLError|SpeechRecognitionError", J.Interceptor);
 
-H.defineNativeMethods("HTMLAppletElement|HTMLAreaElement|HTMLAudioElement|HTMLBRElement|HTMLBaseElement|HTMLBaseFontElement|HTMLBodyElement|HTMLButtonElement|HTMLCanvasElement|HTMLContentElement|HTMLDListElement|HTMLDataListElement|HTMLDetailsElement|HTMLDialogElement|HTMLDirectoryElement|HTMLDivElement|HTMLEmbedElement|HTMLFieldSetElement|HTMLFontElement|HTMLFrameElement|HTMLFrameSetElement|HTMLHRElement|HTMLHeadElement|HTMLHeadingElement|HTMLHtmlElement|HTMLIFrameElement|HTMLImageElement|HTMLInputElement|HTMLKeygenElement|HTMLLIElement|HTMLLabelElement|HTMLLegendElement|HTMLLinkElement|HTMLMapElement|HTMLMarqueeElement|HTMLMediaElement|HTMLMenuElement|HTMLMetaElement|HTMLMeterElement|HTMLModElement|HTMLOListElement|HTMLObjectElement|HTMLOptGroupElement|HTMLOptionElement|HTMLOutputElement|HTMLParagraphElement|HTMLParamElement|HTMLPreElement|HTMLProgressElement|HTMLQuoteElement|HTMLScriptElement|HTMLShadowElement|HTMLSourceElement|HTMLSpanElement|HTMLStyleElement|HTMLTableCaptionElement|HTMLTableCellElement|HTMLTableColElement|HTMLTableDataCellElement|HTMLTableElement|HTMLTableHeaderCellElement|HTMLTableRowElement|HTMLTableSectionElement|HTMLTemplateElement|HTMLTextAreaElement|HTMLTitleElement|HTMLTrackElement|HTMLUListElement|HTMLUnknownElement|HTMLVideoElement", W.HtmlElement);
+H.defineNativeMethods("HTMLAppletElement|HTMLAreaElement|HTMLAudioElement|HTMLBRElement|HTMLBaseElement|HTMLBaseFontElement|HTMLBodyElement|HTMLCanvasElement|HTMLContentElement|HTMLDListElement|HTMLDataListElement|HTMLDetailsElement|HTMLDialogElement|HTMLDirectoryElement|HTMLDivElement|HTMLFontElement|HTMLFrameElement|HTMLFrameSetElement|HTMLHRElement|HTMLHeadElement|HTMLHeadingElement|HTMLHtmlElement|HTMLImageElement|HTMLLIElement|HTMLLabelElement|HTMLLegendElement|HTMLLinkElement|HTMLMarqueeElement|HTMLMediaElement|HTMLMenuElement|HTMLMeterElement|HTMLModElement|HTMLOListElement|HTMLOptGroupElement|HTMLOptionElement|HTMLParagraphElement|HTMLPreElement|HTMLProgressElement|HTMLQuoteElement|HTMLScriptElement|HTMLShadowElement|HTMLSourceElement|HTMLSpanElement|HTMLStyleElement|HTMLTableCaptionElement|HTMLTableCellElement|HTMLTableColElement|HTMLTableDataCellElement|HTMLTableElement|HTMLTableHeaderCellElement|HTMLTableRowElement|HTMLTableSectionElement|HTMLTitleElement|HTMLTrackElement|HTMLUListElement|HTMLUnknownElement|HTMLVideoElement", W.HtmlElement);
 
 H.defineNativeMethodsNonleaf("HTMLElement", W.HtmlElement);
 
 H.defineNativeMethods("HTMLAnchorElement", W.AnchorElement);
+
+H.defineNativeMethods("HTMLButtonElement", W.ButtonElement);
+
+H.defineNativeMethods("CDATASection|CharacterData|Comment|ProcessingInstruction|Text", W.CharacterData);
+
+H.defineNativeMethods("SVGDocument", W.Document);
+
+H.defineNativeMethodsNonleaf("Document", W.Document);
+
+H.defineNativeMethods("DocumentFragment|ShadowRoot", W.DocumentFragment);
 
 H.defineNativeMethods("DOMException", W.DomException);
 
@@ -978,15 +1820,49 @@ H.defineNativeMethods("SVGAElement|SVGAltGlyphDefElement|SVGAltGlyphElement|SVGA
 
 H.defineNativeMethodsNonleaf("Element", W.Element);
 
+H.defineNativeMethods("HTMLEmbedElement", W.EmbedElement);
+
 H.defineNativeMethodsNonleaf("EventTarget", W.EventTarget);
+
+H.defineNativeMethods("HTMLFieldSetElement", W.FieldSetElement);
 
 H.defineNativeMethods("HTMLFormElement", W.FormElement);
 
-H.defineNativeMethods("Document|HTMLDocument", W.Node);
+H.defineNativeMethods("HTMLDocument", W.HtmlDocument);
+
+H.defineNativeMethods("HTMLIFrameElement", W.IFrameElement);
+
+H.defineNativeMethods("HTMLInputElement", W.InputElement);
+
+H.defineNativeMethods("HTMLKeygenElement", W.KeygenElement);
+
+H.defineNativeMethods("HTMLMapElement", W.MapElement);
+
+H.defineNativeMethods("HTMLMetaElement", W.MetaElement);
+
+H.defineNativeMethods("DocumentType|Entity|Notation", W.Node);
 
 H.defineNativeMethodsNonleaf("Node", W.Node);
 
+H.defineNativeMethods("NodeList|RadioNodeList", W.NodeList);
+
+H.defineNativeMethods("HTMLObjectElement", W.ObjectElement);
+
+H.defineNativeMethods("HTMLOutputElement", W.OutputElement);
+
+H.defineNativeMethods("HTMLParamElement", W.ParamElement);
+
 H.defineNativeMethods("HTMLSelectElement", W.SelectElement);
+
+H.defineNativeMethods("HTMLTemplateElement", W.TemplateElement);
+
+H.defineNativeMethods("HTMLTextAreaElement", W.TextAreaElement);
+
+H.defineNativeMethods("DOMWindow|Window", W.Window);
+
+H.defineNativeMethods("Attr", W._Attr);
+
+H.defineNativeMethods("MozNamedAttrMap|NamedNodeMap", W._NamedNodeMap);
 
 
 init.functionAliases = {};
@@ -1182,6 +2058,17 @@ function init() {
         var s = fields.split(";");
         fields = s[1] == "" ? [] : s[1].split(",");
         supr = s[0];
+        if (supr && supr.indexOf("+") > 0) {
+          s = supr.split("+");
+          supr = s[0];
+          var mixin = collectedClasses[s[1]];
+          if (mixin instanceof Array)
+            mixin = mixin[1];
+          for (var d in mixin) {
+            if (hasOwnProperty.call(mixin, d) && !hasOwnProperty.call(desc, d))
+              desc[d] = mixin[d];
+          }
+        }
         if (typeof dart_precompiled != "function") {
           combinedConstructorFunction += defineClass(name, cls, fields);
           constructorsList.push(cls);
@@ -1273,6 +2160,7 @@ function init() {
     Isolate.prototype.constructor = Isolate;
     Isolate.$isolateProperties = isolateProperties;
     Isolate.$finishClasses = oldIsolate.$finishClasses;
+    Isolate.makeConstantList = oldIsolate.makeConstantList;
     return Isolate;
   };
 }
@@ -1405,6 +2293,51 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   JSString.prototype = $desc;
+  function ConstantMap() {
+  }
+  ConstantMap.builtin$cls = "ConstantMap";
+  if (!"name" in ConstantMap)
+    ConstantMap.name = "ConstantMap";
+  $desc = $collectedClasses.ConstantMap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ConstantMap.prototype = $desc;
+  function ConstantStringMap(length, _jsObject, _keys) {
+    this.length = length;
+    this._jsObject = _jsObject;
+    this._keys = _keys;
+  }
+  ConstantStringMap.builtin$cls = "ConstantStringMap";
+  if (!"name" in ConstantStringMap)
+    ConstantStringMap.name = "ConstantStringMap";
+  $desc = $collectedClasses.ConstantStringMap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ConstantStringMap.prototype = $desc;
+  ConstantStringMap.prototype.get$length = function(receiver) {
+    return this.length;
+  };
+  function ConstantStringMap_forEach_closure(this_0, f_1) {
+    this.this_0 = this_0;
+    this.f_1 = f_1;
+  }
+  ConstantStringMap_forEach_closure.builtin$cls = "ConstantStringMap_forEach_closure";
+  if (!"name" in ConstantStringMap_forEach_closure)
+    ConstantStringMap_forEach_closure.name = "ConstantStringMap_forEach_closure";
+  $desc = $collectedClasses.ConstantStringMap_forEach_closure;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ConstantStringMap_forEach_closure.prototype = $desc;
+  function _ConstantMapKeyIterable(_map) {
+    this._map = _map;
+  }
+  _ConstantMapKeyIterable.builtin$cls = "_ConstantMapKeyIterable";
+  if (!"name" in _ConstantMapKeyIterable)
+    _ConstantMapKeyIterable.name = "_ConstantMapKeyIterable";
+  $desc = $collectedClasses._ConstantMapKeyIterable;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _ConstantMapKeyIterable.prototype = $desc;
   function invokeClosure_closure(closure_0) {
     this.closure_0 = closure_0;
   }
@@ -1468,11 +2401,11 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   applyExperimentalFixup_newGetTagDartFunction.prototype = $desc;
-  function ListIterator(_iterable, _length, _index, _current) {
+  function ListIterator(_iterable, _liblib$_length, _index, _liblib$_current) {
     this._iterable = _iterable;
-    this._length = _length;
+    this._liblib$_length = _liblib$_length;
     this._index = _index;
-    this._current = _current;
+    this._liblib$_current = _liblib$_current;
   }
   ListIterator.builtin$cls = "ListIterator";
   if (!"name" in ListIterator)
@@ -1481,6 +2414,89 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ListIterator.prototype = $desc;
+  function MappedIterable(_iterable, _f) {
+    this._iterable = _iterable;
+    this._f = _f;
+  }
+  MappedIterable.builtin$cls = "MappedIterable";
+  if (!"name" in MappedIterable)
+    MappedIterable.name = "MappedIterable";
+  $desc = $collectedClasses.MappedIterable;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  MappedIterable.prototype = $desc;
+  function MappedIterator(_liblib$_current, _iterator, _f) {
+    this._liblib$_current = _liblib$_current;
+    this._iterator = _iterator;
+    this._f = _f;
+  }
+  MappedIterator.builtin$cls = "MappedIterator";
+  if (!"name" in MappedIterator)
+    MappedIterator.name = "MappedIterator";
+  $desc = $collectedClasses.MappedIterator;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  MappedIterator.prototype = $desc;
+  function WhereIterable(_iterable, _f) {
+    this._iterable = _iterable;
+    this._f = _f;
+  }
+  WhereIterable.builtin$cls = "WhereIterable";
+  if (!"name" in WhereIterable)
+    WhereIterable.name = "WhereIterable";
+  $desc = $collectedClasses.WhereIterable;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  WhereIterable.prototype = $desc;
+  function WhereIterator(_iterator, _f) {
+    this._iterator = _iterator;
+    this._f = _f;
+  }
+  WhereIterator.builtin$cls = "WhereIterator";
+  if (!"name" in WhereIterator)
+    WhereIterator.name = "WhereIterator";
+  $desc = $collectedClasses.WhereIterator;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  WhereIterator.prototype = $desc;
+  function IterableBase() {
+  }
+  IterableBase.builtin$cls = "IterableBase";
+  if (!"name" in IterableBase)
+    IterableBase.name = "IterableBase";
+  $desc = $collectedClasses.IterableBase;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  IterableBase.prototype = $desc;
+  function ListBase() {
+  }
+  ListBase.builtin$cls = "ListBase";
+  if (!"name" in ListBase)
+    ListBase.name = "ListBase";
+  $desc = $collectedClasses.ListBase;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ListBase.prototype = $desc;
+  function ListMixin() {
+  }
+  ListMixin.builtin$cls = "ListMixin";
+  if (!"name" in ListMixin)
+    ListMixin.name = "ListMixin";
+  $desc = $collectedClasses.ListMixin;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ListMixin.prototype = $desc;
+  function Maps_mapToString_closure(box_0, result_1) {
+    this.box_0 = box_0;
+    this.result_1 = result_1;
+  }
+  Maps_mapToString_closure.builtin$cls = "Maps_mapToString_closure";
+  if (!"name" in Maps_mapToString_closure)
+    Maps_mapToString_closure.name = "Maps_mapToString_closure";
+  $desc = $collectedClasses.Maps_mapToString_closure;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Maps_mapToString_closure.prototype = $desc;
   function Error() {
   }
   Error.builtin$cls = "Error";
@@ -1519,6 +2535,16 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   RangeError.prototype = $desc;
+  function UnsupportedError(message) {
+    this.message = message;
+  }
+  UnsupportedError.builtin$cls = "UnsupportedError";
+  if (!"name" in UnsupportedError)
+    UnsupportedError.name = "UnsupportedError";
+  $desc = $collectedClasses.UnsupportedError;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  UnsupportedError.prototype = $desc;
   function ConcurrentModificationError(modifiedObject) {
     this.modifiedObject = modifiedObject;
   }
@@ -1549,6 +2575,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   _ExceptionImplementation.prototype = $desc;
+  function Iterator() {
+  }
+  Iterator.builtin$cls = "Iterator";
+  if (!"name" in Iterator)
+    Iterator.name = "Iterator";
+  $desc = $collectedClasses.Iterator;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Iterator.prototype = $desc;
   function Null() {
   }
   Null.builtin$cls = "Null";
@@ -1580,6 +2615,140 @@ function dart_precompiled($collectedClasses) {
   StringBuffer.prototype.get$_contents = function() {
     return this._contents;
   };
+  function _FrozenElementList(_nodeList, _elementList) {
+    this._nodeList = _nodeList;
+    this._elementList = _elementList;
+  }
+  _FrozenElementList.builtin$cls = "_FrozenElementList";
+  if (!"name" in _FrozenElementList)
+    _FrozenElementList.name = "_FrozenElementList";
+  $desc = $collectedClasses._FrozenElementList;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _FrozenElementList.prototype = $desc;
+  function _FrozenElementList$_wrap_closure() {
+  }
+  _FrozenElementList$_wrap_closure.builtin$cls = "_FrozenElementList$_wrap_closure";
+  if (!"name" in _FrozenElementList$_wrap_closure)
+    _FrozenElementList$_wrap_closure.name = "_FrozenElementList$_wrap_closure";
+  $desc = $collectedClasses._FrozenElementList$_wrap_closure;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _FrozenElementList$_wrap_closure.prototype = $desc;
+  function Interceptor_ListMixin() {
+  }
+  Interceptor_ListMixin.builtin$cls = "Interceptor_ListMixin";
+  if (!"name" in Interceptor_ListMixin)
+    Interceptor_ListMixin.name = "Interceptor_ListMixin";
+  $desc = $collectedClasses.Interceptor_ListMixin;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Interceptor_ListMixin.prototype = $desc;
+  function Interceptor_ListMixin_ImmutableListMixin() {
+  }
+  Interceptor_ListMixin_ImmutableListMixin.builtin$cls = "Interceptor_ListMixin_ImmutableListMixin";
+  if (!"name" in Interceptor_ListMixin_ImmutableListMixin)
+    Interceptor_ListMixin_ImmutableListMixin.name = "Interceptor_ListMixin_ImmutableListMixin";
+  $desc = $collectedClasses.Interceptor_ListMixin_ImmutableListMixin;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Interceptor_ListMixin_ImmutableListMixin.prototype = $desc;
+  function closure() {
+  }
+  closure.builtin$cls = "closure";
+  if (!"name" in closure)
+    closure.name = "closure";
+  $desc = $collectedClasses.closure;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  closure.prototype = $desc;
+  function TemplateElement_bootstrap__bootstrap() {
+  }
+  TemplateElement_bootstrap__bootstrap.builtin$cls = "TemplateElement_bootstrap__bootstrap";
+  if (!"name" in TemplateElement_bootstrap__bootstrap)
+    TemplateElement_bootstrap__bootstrap.name = "TemplateElement_bootstrap__bootstrap";
+  $desc = $collectedClasses.TemplateElement_bootstrap__bootstrap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  TemplateElement_bootstrap__bootstrap.prototype = $desc;
+  function closure0() {
+  }
+  closure0.builtin$cls = "closure0";
+  if (!"name" in closure0)
+    closure0.name = "closure0";
+  $desc = $collectedClasses.closure0;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  closure0.prototype = $desc;
+  function Interceptor_ListMixin0() {
+  }
+  Interceptor_ListMixin0.builtin$cls = "Interceptor_ListMixin0";
+  if (!"name" in Interceptor_ListMixin0)
+    Interceptor_ListMixin0.name = "Interceptor_ListMixin0";
+  $desc = $collectedClasses.Interceptor_ListMixin0;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Interceptor_ListMixin0.prototype = $desc;
+  function Interceptor_ListMixin_ImmutableListMixin0() {
+  }
+  Interceptor_ListMixin_ImmutableListMixin0.builtin$cls = "Interceptor_ListMixin_ImmutableListMixin0";
+  if (!"name" in Interceptor_ListMixin_ImmutableListMixin0)
+    Interceptor_ListMixin_ImmutableListMixin0.name = "Interceptor_ListMixin_ImmutableListMixin0";
+  $desc = $collectedClasses.Interceptor_ListMixin_ImmutableListMixin0;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Interceptor_ListMixin_ImmutableListMixin0.prototype = $desc;
+  function _AttributeMap() {
+  }
+  _AttributeMap.builtin$cls = "_AttributeMap";
+  if (!"name" in _AttributeMap)
+    _AttributeMap.name = "_AttributeMap";
+  $desc = $collectedClasses._AttributeMap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _AttributeMap.prototype = $desc;
+  function _ElementAttributeMap(_element) {
+    this._element = _element;
+  }
+  _ElementAttributeMap.builtin$cls = "_ElementAttributeMap";
+  if (!"name" in _ElementAttributeMap)
+    _ElementAttributeMap.name = "_ElementAttributeMap";
+  $desc = $collectedClasses._ElementAttributeMap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _ElementAttributeMap.prototype = $desc;
+  function ImmutableListMixin() {
+  }
+  ImmutableListMixin.builtin$cls = "ImmutableListMixin";
+  if (!"name" in ImmutableListMixin)
+    ImmutableListMixin.name = "ImmutableListMixin";
+  $desc = $collectedClasses.ImmutableListMixin;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ImmutableListMixin.prototype = $desc;
+  function FixedSizeListIterator(_array, _length, _position, _current) {
+    this._array = _array;
+    this._length = _length;
+    this._position = _position;
+    this._current = _current;
+  }
+  FixedSizeListIterator.builtin$cls = "FixedSizeListIterator";
+  if (!"name" in FixedSizeListIterator)
+    FixedSizeListIterator.name = "FixedSizeListIterator";
+  $desc = $collectedClasses.FixedSizeListIterator;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  FixedSizeListIterator.prototype = $desc;
+  function _DOMWindowCrossFrame(_window) {
+    this._window = _window;
+  }
+  _DOMWindowCrossFrame.builtin$cls = "_DOMWindowCrossFrame";
+  if (!"name" in _DOMWindowCrossFrame)
+    _DOMWindowCrossFrame.name = "_DOMWindowCrossFrame";
+  $desc = $collectedClasses._DOMWindowCrossFrame;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _DOMWindowCrossFrame.prototype = $desc;
   function HtmlElement() {
   }
   HtmlElement.builtin$cls = "HtmlElement";
@@ -1598,6 +2767,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   AnchorElement.prototype = $desc;
+  AnchorElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function AreaElement() {
   }
   AreaElement.builtin$cls = "AreaElement";
@@ -1661,6 +2833,18 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ButtonElement.prototype = $desc;
+  ButtonElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
+  function CDataSection() {
+  }
+  CDataSection.builtin$cls = "CDataSection";
+  if (!"name" in CDataSection)
+    CDataSection.name = "CDataSection";
+  $desc = $collectedClasses.CDataSection;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  CDataSection.prototype = $desc;
   function CanvasElement() {
   }
   CanvasElement.builtin$cls = "CanvasElement";
@@ -1670,6 +2854,27 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   CanvasElement.prototype = $desc;
+  function CharacterData() {
+  }
+  CharacterData.builtin$cls = "CharacterData";
+  if (!"name" in CharacterData)
+    CharacterData.name = "CharacterData";
+  $desc = $collectedClasses.CharacterData;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  CharacterData.prototype = $desc;
+  CharacterData.prototype.get$length = function(receiver) {
+    return receiver.length;
+  };
+  function Comment() {
+  }
+  Comment.builtin$cls = "Comment";
+  if (!"name" in Comment)
+    Comment.name = "Comment";
+  $desc = $collectedClasses.Comment;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Comment.prototype = $desc;
   function ContentElement() {
   }
   ContentElement.builtin$cls = "ContentElement";
@@ -1733,6 +2938,24 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   Document.prototype = $desc;
+  function DocumentFragment() {
+  }
+  DocumentFragment.builtin$cls = "DocumentFragment";
+  if (!"name" in DocumentFragment)
+    DocumentFragment.name = "DocumentFragment";
+  $desc = $collectedClasses.DocumentFragment;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  DocumentFragment.prototype = $desc;
+  function DocumentType() {
+  }
+  DocumentType.builtin$cls = "DocumentType";
+  if (!"name" in DocumentType)
+    DocumentType.name = "DocumentType";
+  $desc = $collectedClasses.DocumentType;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  DocumentType.prototype = $desc;
   function DomError() {
   }
   DomError.builtin$cls = "DomError";
@@ -1751,6 +2974,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   DomException.prototype = $desc;
+  function DomImplementation() {
+  }
+  DomImplementation.builtin$cls = "DomImplementation";
+  if (!"name" in DomImplementation)
+    DomImplementation.name = "DomImplementation";
+  $desc = $collectedClasses.DomImplementation;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  DomImplementation.prototype = $desc;
   function Element() {
   }
   Element.builtin$cls = "Element";
@@ -1760,6 +2992,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   Element.prototype = $desc;
+  Element.prototype.set$_templateContent = function(receiver, v) {
+    return receiver._templateContent = v;
+  };
+  Element.prototype.get$_templateIsDecorated = function(receiver) {
+    return receiver._templateIsDecorated;
+  };
+  Element.prototype.set$_templateIsDecorated = function(receiver, v) {
+    return receiver._templateIsDecorated = v;
+  };
   function EmbedElement() {
   }
   EmbedElement.builtin$cls = "EmbedElement";
@@ -1769,6 +3010,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   EmbedElement.prototype = $desc;
+  EmbedElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function ErrorEvent() {
   }
   ErrorEvent.builtin$cls = "ErrorEvent";
@@ -1805,6 +3049,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   FieldSetElement.prototype = $desc;
+  FieldSetElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function FileError() {
   }
   FileError.builtin$cls = "FileError";
@@ -1825,6 +3072,9 @@ function dart_precompiled($collectedClasses) {
   FormElement.prototype = $desc;
   FormElement.prototype.get$length = function(receiver) {
     return receiver.length;
+  };
+  FormElement.prototype.get$name = function(receiver) {
+    return receiver.name;
   };
   function HRElement() {
   }
@@ -1862,6 +3112,12 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   HtmlDocument.prototype = $desc;
+  HtmlDocument.prototype.get$_templateContentsOwner = function(receiver) {
+    return receiver._templateContentsOwner;
+  };
+  HtmlDocument.prototype.set$_templateContentsOwner = function(receiver, v) {
+    return receiver._templateContentsOwner = v;
+  };
   function HtmlHtmlElement() {
   }
   HtmlHtmlElement.builtin$cls = "HtmlHtmlElement";
@@ -1880,6 +3136,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   IFrameElement.prototype = $desc;
+  IFrameElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function ImageElement() {
   }
   ImageElement.builtin$cls = "ImageElement";
@@ -1898,6 +3157,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   InputElement.prototype = $desc;
+  InputElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function KeygenElement() {
   }
   KeygenElement.builtin$cls = "KeygenElement";
@@ -1907,6 +3169,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   KeygenElement.prototype = $desc;
+  KeygenElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function LIElement() {
   }
   LIElement.builtin$cls = "LIElement";
@@ -1952,6 +3217,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   MapElement.prototype = $desc;
+  MapElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function MediaElement() {
   }
   MediaElement.builtin$cls = "MediaElement";
@@ -1997,6 +3265,12 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   MetaElement.prototype = $desc;
+  MetaElement.prototype.get$content = function(receiver) {
+    return receiver.content;
+  };
+  MetaElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function MeterElement() {
   }
   MeterElement.builtin$cls = "MeterElement";
@@ -2015,6 +3289,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ModElement.prototype = $desc;
+  function Navigator() {
+  }
+  Navigator.builtin$cls = "Navigator";
+  if (!"name" in Navigator)
+    Navigator.name = "Navigator";
+  $desc = $collectedClasses.Navigator;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Navigator.prototype = $desc;
   function NavigatorUserMediaError() {
   }
   NavigatorUserMediaError.builtin$cls = "NavigatorUserMediaError";
@@ -2033,6 +3316,27 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   Node.prototype = $desc;
+  Node.prototype.get$document = function(receiver) {
+    return receiver.ownerDocument;
+  };
+  function NodeList() {
+  }
+  NodeList.builtin$cls = "NodeList";
+  if (!"name" in NodeList)
+    NodeList.name = "NodeList";
+  $desc = $collectedClasses.NodeList;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  NodeList.prototype = $desc;
+  function Notation() {
+  }
+  Notation.builtin$cls = "Notation";
+  if (!"name" in Notation)
+    Notation.name = "Notation";
+  $desc = $collectedClasses.Notation;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Notation.prototype = $desc;
   function OListElement() {
   }
   OListElement.builtin$cls = "OListElement";
@@ -2051,6 +3355,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ObjectElement.prototype = $desc;
+  ObjectElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function OptGroupElement() {
   }
   OptGroupElement.builtin$cls = "OptGroupElement";
@@ -2078,6 +3385,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   OutputElement.prototype = $desc;
+  OutputElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function ParagraphElement() {
   }
   ParagraphElement.builtin$cls = "ParagraphElement";
@@ -2096,6 +3406,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ParamElement.prototype = $desc;
+  ParamElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function PositionError() {
   }
   PositionError.builtin$cls = "PositionError";
@@ -2114,6 +3427,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   PreElement.prototype = $desc;
+  function ProcessingInstruction() {
+  }
+  ProcessingInstruction.builtin$cls = "ProcessingInstruction";
+  if (!"name" in ProcessingInstruction)
+    ProcessingInstruction.name = "ProcessingInstruction";
+  $desc = $collectedClasses.ProcessingInstruction;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ProcessingInstruction.prototype = $desc;
   function ProgressElement() {
   }
   ProgressElement.builtin$cls = "ProgressElement";
@@ -2153,6 +3475,9 @@ function dart_precompiled($collectedClasses) {
   SelectElement.prototype.get$length = function(receiver) {
     return receiver.length;
   };
+  SelectElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function ShadowElement() {
   }
   ShadowElement.builtin$cls = "ShadowElement";
@@ -2162,6 +3487,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   ShadowElement.prototype = $desc;
+  function ShadowRoot() {
+  }
+  ShadowRoot.builtin$cls = "ShadowRoot";
+  if (!"name" in ShadowRoot)
+    ShadowRoot.name = "ShadowRoot";
+  $desc = $collectedClasses.ShadowRoot;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  ShadowRoot.prototype = $desc;
   function SourceElement() {
   }
   SourceElement.builtin$cls = "SourceElement";
@@ -2261,6 +3595,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   TemplateElement.prototype = $desc;
+  function Text() {
+  }
+  Text.builtin$cls = "Text";
+  if (!"name" in Text)
+    Text.name = "Text";
+  $desc = $collectedClasses.Text;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Text.prototype = $desc;
   function TextAreaElement() {
   }
   TextAreaElement.builtin$cls = "TextAreaElement";
@@ -2270,6 +3613,9 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   TextAreaElement.prototype = $desc;
+  TextAreaElement.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
   function TitleElement() {
   }
   TitleElement.builtin$cls = "TitleElement";
@@ -2315,6 +3661,36 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   VideoElement.prototype = $desc;
+  function Window() {
+  }
+  Window.builtin$cls = "Window";
+  if (!"name" in Window)
+    Window.name = "Window";
+  $desc = $collectedClasses.Window;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  Window.prototype = $desc;
+  function _Attr() {
+  }
+  _Attr.builtin$cls = "_Attr";
+  if (!"name" in _Attr)
+    _Attr.name = "_Attr";
+  $desc = $collectedClasses._Attr;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _Attr.prototype = $desc;
+  _Attr.prototype.get$name = function(receiver) {
+    return receiver.name;
+  };
+  function _Entity() {
+  }
+  _Entity.builtin$cls = "_Entity";
+  if (!"name" in _Entity)
+    _Entity.name = "_Entity";
+  $desc = $collectedClasses._Entity;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _Entity.prototype = $desc;
   function _HTMLAppletElement() {
   }
   _HTMLAppletElement.builtin$cls = "_HTMLAppletElement";
@@ -2378,6 +3754,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   _HTMLMarqueeElement.prototype = $desc;
+  function _NamedNodeMap() {
+  }
+  _NamedNodeMap.builtin$cls = "_NamedNodeMap";
+  if (!"name" in _NamedNodeMap)
+    _NamedNodeMap.name = "_NamedNodeMap";
+  $desc = $collectedClasses._NamedNodeMap;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  _NamedNodeMap.prototype = $desc;
   function AElement() {
   }
   AElement.builtin$cls = "AElement";
@@ -2873,6 +4258,15 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   StyleElement0.prototype = $desc;
+  function SvgDocument() {
+  }
+  SvgDocument.builtin$cls = "SvgDocument";
+  if (!"name" in SvgDocument)
+    SvgDocument.name = "SvgDocument";
+  $desc = $collectedClasses.SvgDocument;
+  if ($desc instanceof Array)
+    $desc = $desc[1];
+  SvgDocument.prototype = $desc;
   function SvgElement() {
   }
   SvgElement.builtin$cls = "SvgElement";
@@ -3251,5 +4645,5 @@ function dart_precompiled($collectedClasses) {
   if ($desc instanceof Array)
     $desc = $desc[1];
   Closure$callDartFunctionWith1Arg.prototype = $desc;
-  return [Interceptor, JSBool, JSNull, JavaScriptObject, PlainJavaScriptObject, UnknownJavaScriptObject, JSArray, JSMutableArray, JSFixedArray, JSExtendableArray, JSNumber, JSInt, JSDouble, JSString, invokeClosure_closure, invokeClosure_closure0, invokeClosure_closure1, Closure, TypeImpl, applyExperimentalFixup_newGetTagDartFunction, ListIterator, Error, NullThrownError, ArgumentError, RangeError, ConcurrentModificationError, CyclicInitializationError, _ExceptionImplementation, Null, Object, StringBuffer, HtmlElement, AnchorElement, AreaElement, AudioElement, AutocompleteErrorEvent, BRElement, BaseElement, BodyElement, ButtonElement, CanvasElement, ContentElement, DListElement, DataListElement, DetailsElement, DialogElement, DivElement, Document, DomError, DomException, Element, EmbedElement, ErrorEvent, Event, EventTarget, FieldSetElement, FileError, FormElement, HRElement, HeadElement, HeadingElement, HtmlDocument, HtmlHtmlElement, IFrameElement, ImageElement, InputElement, KeygenElement, LIElement, LabelElement, LegendElement, LinkElement, MapElement, MediaElement, MediaError, MediaKeyError, MenuElement, MetaElement, MeterElement, ModElement, NavigatorUserMediaError, Node, OListElement, ObjectElement, OptGroupElement, OptionElement, OutputElement, ParagraphElement, ParamElement, PositionError, PreElement, ProgressElement, QuoteElement, ScriptElement, SelectElement, ShadowElement, SourceElement, SpanElement, SpeechRecognitionError, StyleElement, TableCaptionElement, TableCellElement, TableColElement, TableElement, TableRowElement, TableSectionElement, TemplateElement, TextAreaElement, TitleElement, TrackElement, UListElement, UnknownElement, VideoElement, _HTMLAppletElement, _HTMLBaseFontElement, _HTMLDirectoryElement, _HTMLFontElement, _HTMLFrameElement, _HTMLFrameSetElement, _HTMLMarqueeElement, AElement, AltGlyphElement, AnimateElement, AnimateMotionElement, AnimateTransformElement, AnimationElement, CircleElement, ClipPathElement, DefsElement, DescElement, EllipseElement, FEBlendElement, FEColorMatrixElement, FEComponentTransferElement, FECompositeElement, FEConvolveMatrixElement, FEDiffuseLightingElement, FEDisplacementMapElement, FEDistantLightElement, FEFloodElement, FEFuncAElement, FEFuncBElement, FEFuncGElement, FEFuncRElement, FEGaussianBlurElement, FEImageElement, FEMergeElement, FEMergeNodeElement, FEMorphologyElement, FEOffsetElement, FEPointLightElement, FESpecularLightingElement, FESpotLightElement, FETileElement, FETurbulenceElement, FilterElement, ForeignObjectElement, GElement, GraphicsElement, ImageElement0, LineElement, LinearGradientElement, MarkerElement, MaskElement, MetadataElement, PathElement, PatternElement, PolygonElement, PolylineElement, RadialGradientElement, RectElement, ScriptElement0, SetElement, StopElement, StyleElement0, SvgElement, SvgSvgElement, SwitchElement, SymbolElement, TSpanElement, TextContentElement, TextElement, TextPathElement, TextPositioningElement, TitleElement0, UseElement, ViewElement, _GradientElement, _SVGAltGlyphDefElement, _SVGAltGlyphItemElement, _SVGAnimateColorElement, _SVGComponentTransferFunctionElement, _SVGCursorElement, _SVGFEDropShadowElement, _SVGFontElement, _SVGFontFaceElement, _SVGFontFaceFormatElement, _SVGFontFaceNameElement, _SVGFontFaceSrcElement, _SVGFontFaceUriElement, _SVGGlyphElement, _SVGGlyphRefElement, _SVGHKernElement, _SVGMPathElement, _SVGMissingGlyphElement, _SVGTRefElement, _SVGVKernElement, SqlError, Closure$toStringWrapper, Closure$invokeClosure, Closure$typeNameInChrome, Closure$typeNameInSafari, Closure$typeNameInOpera, Closure$typeNameInFirefox, Closure$typeNameInIE, Closure$constructorNameFallback, Closure$callDartFunctionWith1Arg];
+  return [Interceptor, JSBool, JSNull, JavaScriptObject, PlainJavaScriptObject, UnknownJavaScriptObject, JSArray, JSMutableArray, JSFixedArray, JSExtendableArray, JSNumber, JSInt, JSDouble, JSString, ConstantMap, ConstantStringMap, ConstantStringMap_forEach_closure, _ConstantMapKeyIterable, invokeClosure_closure, invokeClosure_closure0, invokeClosure_closure1, Closure, TypeImpl, applyExperimentalFixup_newGetTagDartFunction, ListIterator, MappedIterable, MappedIterator, WhereIterable, WhereIterator, IterableBase, ListBase, ListMixin, Maps_mapToString_closure, Error, NullThrownError, ArgumentError, RangeError, UnsupportedError, ConcurrentModificationError, CyclicInitializationError, _ExceptionImplementation, Iterator, Null, Object, StringBuffer, _FrozenElementList, _FrozenElementList$_wrap_closure, Interceptor_ListMixin, Interceptor_ListMixin_ImmutableListMixin, closure, TemplateElement_bootstrap__bootstrap, closure0, Interceptor_ListMixin0, Interceptor_ListMixin_ImmutableListMixin0, _AttributeMap, _ElementAttributeMap, ImmutableListMixin, FixedSizeListIterator, _DOMWindowCrossFrame, HtmlElement, AnchorElement, AreaElement, AudioElement, AutocompleteErrorEvent, BRElement, BaseElement, BodyElement, ButtonElement, CDataSection, CanvasElement, CharacterData, Comment, ContentElement, DListElement, DataListElement, DetailsElement, DialogElement, DivElement, Document, DocumentFragment, DocumentType, DomError, DomException, DomImplementation, Element, EmbedElement, ErrorEvent, Event, EventTarget, FieldSetElement, FileError, FormElement, HRElement, HeadElement, HeadingElement, HtmlDocument, HtmlHtmlElement, IFrameElement, ImageElement, InputElement, KeygenElement, LIElement, LabelElement, LegendElement, LinkElement, MapElement, MediaElement, MediaError, MediaKeyError, MenuElement, MetaElement, MeterElement, ModElement, Navigator, NavigatorUserMediaError, Node, NodeList, Notation, OListElement, ObjectElement, OptGroupElement, OptionElement, OutputElement, ParagraphElement, ParamElement, PositionError, PreElement, ProcessingInstruction, ProgressElement, QuoteElement, ScriptElement, SelectElement, ShadowElement, ShadowRoot, SourceElement, SpanElement, SpeechRecognitionError, StyleElement, TableCaptionElement, TableCellElement, TableColElement, TableElement, TableRowElement, TableSectionElement, TemplateElement, Text, TextAreaElement, TitleElement, TrackElement, UListElement, UnknownElement, VideoElement, Window, _Attr, _Entity, _HTMLAppletElement, _HTMLBaseFontElement, _HTMLDirectoryElement, _HTMLFontElement, _HTMLFrameElement, _HTMLFrameSetElement, _HTMLMarqueeElement, _NamedNodeMap, AElement, AltGlyphElement, AnimateElement, AnimateMotionElement, AnimateTransformElement, AnimationElement, CircleElement, ClipPathElement, DefsElement, DescElement, EllipseElement, FEBlendElement, FEColorMatrixElement, FEComponentTransferElement, FECompositeElement, FEConvolveMatrixElement, FEDiffuseLightingElement, FEDisplacementMapElement, FEDistantLightElement, FEFloodElement, FEFuncAElement, FEFuncBElement, FEFuncGElement, FEFuncRElement, FEGaussianBlurElement, FEImageElement, FEMergeElement, FEMergeNodeElement, FEMorphologyElement, FEOffsetElement, FEPointLightElement, FESpecularLightingElement, FESpotLightElement, FETileElement, FETurbulenceElement, FilterElement, ForeignObjectElement, GElement, GraphicsElement, ImageElement0, LineElement, LinearGradientElement, MarkerElement, MaskElement, MetadataElement, PathElement, PatternElement, PolygonElement, PolylineElement, RadialGradientElement, RectElement, ScriptElement0, SetElement, StopElement, StyleElement0, SvgDocument, SvgElement, SvgSvgElement, SwitchElement, SymbolElement, TSpanElement, TextContentElement, TextElement, TextPathElement, TextPositioningElement, TitleElement0, UseElement, ViewElement, _GradientElement, _SVGAltGlyphDefElement, _SVGAltGlyphItemElement, _SVGAnimateColorElement, _SVGComponentTransferFunctionElement, _SVGCursorElement, _SVGFEDropShadowElement, _SVGFontElement, _SVGFontFaceElement, _SVGFontFaceFormatElement, _SVGFontFaceNameElement, _SVGFontFaceSrcElement, _SVGFontFaceUriElement, _SVGGlyphElement, _SVGGlyphRefElement, _SVGHKernElement, _SVGMPathElement, _SVGMissingGlyphElement, _SVGTRefElement, _SVGVKernElement, SqlError, Closure$toStringWrapper, Closure$invokeClosure, Closure$typeNameInChrome, Closure$typeNameInSafari, Closure$typeNameInOpera, Closure$typeNameInFirefox, Closure$typeNameInIE, Closure$constructorNameFallback, Closure$callDartFunctionWith1Arg];
 }

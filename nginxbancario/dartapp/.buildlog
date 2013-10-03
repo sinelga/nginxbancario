@@ -2465,3 +2465,8 @@ build.dart --machine --changed=deploy/dartapp.dart
 
 build.dart finished [1107 ms]
 
+---
+build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart --changed=deploy/dartapp.dart.j...
+
+build.dart finished [3035 ms]
+
