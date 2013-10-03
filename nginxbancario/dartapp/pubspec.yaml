@@ -2,3 +2,4 @@ name: dartapp
 description: A sample Polymer application
 dependencies:
     polymer: any
+    jsonp: any
