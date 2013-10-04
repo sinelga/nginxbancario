@@ -2490,3 +2490,58 @@ build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart 
 
 build.dart finished [2327 ms]
 
+---
+build.dart --machine --full
+
+build.dart finished [1832 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1082 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart.js --changed=deploy/dartapp.dar...
+Done! All files written to "out"
+build.dart finished [2994 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.dart.js
+Done! All files written to "out"
+build.dart finished [2329 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.dart
+Done! All files written to "out"
+build.dart finished [2313 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [6824 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [7664 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart --changed=deploy/dartapp.dart.j...
+Do not know how to load 'dart:html''package:mdv/mdv.dart': Error: line 19 pos 1: library handler failed
+import 'dart:html';
+^
+'file:///home/juno/git/nginxbancario/nginxbancario/dartapp/build.dart': Error: line 5 pos 1: library handler failed
+import 'package:mdv/mdv.dart' as mdv;
+^
+build.dart finished [773 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.css --changed=deploy/dartapp.dart.js --changed=deploy/dartapp.dar...
+Done! All files written to "out"
+build.dart finished [3053 ms]
+
+---
+build.dart --machine --changed=deploy/dartapp.dart --changed=deploy/dartapp.dart.js
+Done! All files written to "out"
+build.dart finished [2141 ms]
+

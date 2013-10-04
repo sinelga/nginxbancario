@@ -1,20 +1,20 @@
 <!DOCTYPE html><html><head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    
-    <title>Finance</title>
-    
-   <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
-   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
-   
-    <!--<link rel="stylesheet" href="dartapp.css"> -->
-  
-   
-    <!-- This is the bootstrap script for Polymer. 
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<title>Finance</title>
+
+<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+<link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet">
+
+<!--<link rel="stylesheet" href="dartapp.css"> -->
+
+
+<!-- This is the bootstrap script for Polymer. 
          Use this INSTEAD of dart.js -->
-    
-  </head>
-  <body><script src="packages/shadow_dom/shadow_dom.debug.js"></script>
+<!-- <script src="packages/polymer/boot.js"></script> -->
+</head>
+<body><script src="packages/shadow_dom/shadow_dom.debug.js"></script>
 <polymer-element name="rss-feed" attributes="rssfeedarr">
   <template>
    
@@ -44,29 +44,28 @@
   </template>
   
 </polymer-element>
- 
-    <div class="row">
-      <div class="col-lg-2">
-      </div>
-      <div class="col-lg-8">
-        <template id="rss" bind="">      
-          <rss-feed rssfeedarr="{{}}"></rss-feed>      
-        </template>
-      </div>
-      <div class="col-lg-2">
-        <script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-<!-- skyscraper120x600 -->
-<ins class="adsbygoogle" style="display:inline-block;width:120px;height:600px" data-ad-client="ca-pub-4265026941264081" data-ad-slot="8192628653"></ins>
-<script>
-(adsbygoogle = window.adsbygoogle || []).push({});
-</script>    
-      </div>      
-    
-    </div>
-    
-    <script src="packages/browser/interop.js"></script>
-    <script src="http://code.jquery.com/jquery-latest.min.js"></script>
-    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
-  
 
-<script type="application/dart" src="dartapp.html_bootstrap.dart"></script><script src="packages/browser/dart.js"></script></body></html>
+  <div class="row">
+    <div class="col-lg-2"></div>
+    <div class="col-lg-8">
+      <template id="rss" bind=""> <rss-feed rssfeedarr="{{}}"></rss-feed>
+      </template>
+    </div>
+    <div class="col-lg-2">
+      <script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+      <!-- skyscraper120x600 -->
+      <ins class="adsbygoogle" style="display: inline-block; width: 120px; height: 600px" data-ad-client="ca-pub-4265026941264081" data-ad-slot="8192628653"></ins>
+      <script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+    </div>
+
+  </div>
+  
+  <script type="application/dart" src="dartapp.html_bootstrap.dart"></script><script type="text/javascript" src="packages/browser/dart.js"></script>
+  <script src="packages/browser/interop.js"></script>
+  <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+
+</body></html>
