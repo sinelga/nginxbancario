@@ -2545,3 +2545,31 @@ build.dart --machine --changed=deploy/dartapp.dart --changed=deploy/dartapp.dart
 Done! All files written to "out"
 build.dart finished [2141 ms]
 
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2211 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2077 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart.js --changed=web/dartapp.dart.js.deps --changed=web/dartapp.dar...
+Done! All files written to "out"
+build.dart finished [9131 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+error web/dartapp.html:63:3: absolute paths not allowed: "/dartapp.dart"
+  <script type="application/dart" src="/dartapp.dart"></script>
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Done! All files written to "out"
+build.dart finished [2060 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2041 ms]
+
