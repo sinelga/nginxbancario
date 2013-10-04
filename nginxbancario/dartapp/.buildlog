@@ -2573,3 +2573,28 @@ build.dart --machine --changed=web/dartapp.html
 Done! All files written to "out"
 build.dart finished [2041 ms]
 
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2147 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2067 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2109 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2071 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+Done! All files written to "out"
+build.dart finished [2082 ms]
+
