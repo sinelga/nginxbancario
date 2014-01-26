@@ -39,31 +39,33 @@
  *     import 'package:polymer/builder.dart';
  *
  *     main() {
- *        lint().then((_) => deploy());
+ *        deploy(); // deploy also calls the linter internally.
  *     }
  *
- * **Example 3**: Runs the linter, but conditionally does the deploy step. See
- * [parseOptions] for a description of options parsed automatically by this
- * helper library.
+ * **Example 3**: Always run the linter, but conditionally build a deployable
+ * version. See [parseOptions] for a description of options parsed automatically
+ * by this helper library.
  *
  *     import 'dart:io';
  *     import 'package:polymer/builder.dart';
  *
- *     main() {
- *        var options = parseOptions();
- *        lint().then((_) {
- *          if (options.forceDeploy) deploy();
- *        });
+ *     main(args) {
+ *        var options = parseOptions(args);
+ *        if (options.forceDeploy) {
+ *          deploy();
+ *        } else {
+ *          lint();
+ *        }
  *     }
  *
- * **Example 4**: Same as above, but uses [build] (which internally calls [lint]
- * and [deploy]).
+ * **Example 4**: Same as above, but uses [build] (which internally calls either
+ * [lint] or [deploy]).
  *
  *     import 'dart:io';
  *     import 'package:polymer/builder.dart';
  *
- *     main() {
- *        build();
+ *     main(args) {
+ *        build(options: parseOptions(args));
  *     }
  *
  * **Example 5**: Like the previous example, but indicates to the linter and
@@ -73,8 +75,8 @@
  *     import 'dart:io';
  *     import 'package:polymer/builder.dart';
  *
- *     main() {
- *        build(entryPoints: ['web/index.html']);
+ *     main(args) {
+ *        build(entryPoints: ['web/index.html'], options: parseOptions(args));
  *     }
  */
 library polymer.builder;
@@ -86,6 +88,8 @@ import 'package:args/args.dart';
 
 import 'src/build/linter.dart';
 import 'src/build/runner.dart';
+import 'src/build/common.dart';
+
 import 'transformer.dart';
 
 
@@ -99,7 +103,7 @@ import 'transformer.dart';
  * root (for example 'web/index.html'). If null, all files under 'web/' are
  * treated as possible entry points.
  *
- * Options are read from the command line arguments, but you can override them
+ * Options must be passed by
  * passing the [options] argument. The deploy operation is run only when the
  * command-line argument `--deploy` is present, or equivalently when
  * `options.forceDeploy` is true.
@@ -111,14 +115,16 @@ import 'transformer.dart';
  */
 Future build({List<String> entryPoints, CommandLineOptions options,
     String currentPackage, Map<String, String> packageDirs}) {
-  if (options == null) options = _options;
-  return lint(entryPoints: entryPoints, options: options,
-      currentPackage: currentPackage, packageDirs: packageDirs).then((res) {
-    if (options.forceDeploy) {
-      return deploy(entryPoints: entryPoints, options: options,
-          currentPackage: currentPackage, packageDirs: packageDirs);
-    }
-  });
+  if (options == null) {
+    print('warning: now that main takes arguments, you need to explicitly pass'
+        ' options to build(). Running as if no options were passed.');
+    options = parseOptions([]);
+  }
+  return options.forceDeploy
+      ? deploy(entryPoints: entryPoints, options: options,
+            currentPackage: currentPackage, packageDirs: packageDirs)
+      : lint(entryPoints: entryPoints, options: options,
+            currentPackage: currentPackage, packageDirs: packageDirs);
 }
 
 
@@ -131,8 +137,7 @@ Future build({List<String> entryPoints, CommandLineOptions options,
  * root (for example 'web/index.html'). If null, all files under 'web/' are
  * treated as possible entry points.
  *
- * Options are read from the command line arguments, but you can override them
- * passing the [options] argument.
+ * Options must be passed by passing the [options] argument.
  *
  * The linter needs to know the name of the [currentPackage] and the location
  * where to find the code for any package it depends on ([packageDirs]). This is
@@ -140,39 +145,17 @@ Future build({List<String> entryPoints, CommandLineOptions options,
  */
 Future lint({List<String> entryPoints, CommandLineOptions options,
     String currentPackage, Map<String, String> packageDirs}) {
-  if (options == null) options = _options;
+  if (options == null) {
+    print('warning: now that main takes arguments, you need to explicitly pass'
+        ' options to lint(). Running as if no options were passed.');
+    options = parseOptions([]);
+  }
   if (currentPackage == null) currentPackage = readCurrentPackageFromPubspec();
-  var linterOptions = new TransformOptions(currentPackage, entryPoints);
-  var formatter = options.machineFormat ? jsonFormatter : consoleFormatter;
-  var linter = new Linter(linterOptions, formatter);
+  var linterOptions = new TransformOptions(entryPoints: entryPoints);
+  var linter = new Linter(linterOptions);
   return runBarback(new BarbackOptions([[linter]], null,
-      currentPackage: currentPackage, packageDirs: packageDirs)).then((assets) {
-    var messages = {};
-    var futures = [];
-    for (var asset in assets) {
-      var id = asset.id;
-      if (id.package == currentPackage && id.path.endsWith('.messages')) {
-        futures.add(asset.readAsString().then((content) {
-          if (content.isEmpty) return;
-          messages[id] = content;
-        }));
-      }
-    }
-
-    return Future.wait(futures).then((_) {
-      // Print messages sorting by package and filepath.
-      var orderedKeys = messages.keys.toList();
-      orderedKeys.sort((a, b) {
-        int packageCompare = a.package.compareTo(b.package);
-        if (packageCompare != 0) return packageCompare;
-        return a.path.compareTo(b.path);
-      });
-
-      for (var key in orderedKeys) {
-        print(messages[key]);
-      }
-    });
-  });
+      currentPackage: currentPackage, packageDirs: packageDirs,
+      machineFormat: options.machineFormat));
 }
 
 /**
@@ -186,8 +169,7 @@ Future lint({List<String> entryPoints, CommandLineOptions options,
  * root (for example 'web/index.html'). If null, all files under 'web/' are
  * treated as possible entry points.
  *
- * Options are read from the command line arguments, but you can override them
- * passing the [options] list.
+ * Options must be passed by passing the [options] list.
  *
  * The deploy step needs to know the name of the [currentPackage] and the
  * location where to find the code for any package it depends on
@@ -196,12 +178,23 @@ Future lint({List<String> entryPoints, CommandLineOptions options,
  */
 Future deploy({List<String> entryPoints, CommandLineOptions options,
     String currentPackage, Map<String, String> packageDirs}) {
-  if (options == null) options = _options;
+  if (options == null) {
+    print('warning: now that main takes arguments, you need to explicitly pass'
+        ' options to deploy(). Running as if no options were passed.');
+    options = parseOptions([]);
+  }
   if (currentPackage == null) currentPackage = readCurrentPackageFromPubspec();
+
+  var transformOptions = new TransformOptions(
+      entryPoints: entryPoints,
+      directlyIncludeJS: options.directlyIncludeJS,
+      contentSecurityPolicy: options.contentSecurityPolicy,
+      releaseMode: options.releaseMode);
+
   var barbackOptions = new BarbackOptions(
-      createDeployPhases(new TransformOptions(currentPackage, entryPoints)),
+      new PolymerTransformerGroup(transformOptions).phases,
       options.outDir, currentPackage: currentPackage,
-      packageDirs: packageDirs);
+      packageDirs: packageDirs, machineFormat: options.machineFormat);
   return runBarback(barbackOptions)
       .then((_) => print('Done! All files written to "${options.outDir}"'));
 }
@@ -233,12 +226,26 @@ class CommandLineOptions {
   /** Location where to generate output files. */
   final String outDir;
 
-  CommandLineOptions(this.changedFiles, this.removedFiles, this.clean,
-      this.full, this.machineFormat, this.forceDeploy, this.outDir);
-}
+  /** True to use the CSP-compliant JS file. */
+  final bool contentSecurityPolicy;
 
-/** Options parsed directly from the command line arguments. */
-CommandLineOptions _options = parseOptions();
+  /**
+   * True to include the JS script tag directly, without the
+   * "packages/browser/dart.js" trampoline.
+   */
+  final bool directlyIncludeJS;
+
+  /**
+   * Run transformers in release mode. For instance, uses the minified versions
+   * of shadow_dom and custom-elements polyfills.
+   */
+  final bool releaseMode;
+
+  CommandLineOptions(this.changedFiles, this.removedFiles, this.clean,
+      this.full, this.machineFormat, this.forceDeploy, this.outDir,
+      this.directlyIncludeJS, this.contentSecurityPolicy,
+      this.releaseMode);
+}
 
 /**
  * Parse command-line arguments and return a [CommandLineOptions] object. The
@@ -251,6 +258,10 @@ CommandLineOptions _options = parseOptions();
  *   * `--machine`: produce output that can be parsed by tools, such as the Dart
  *     Editor.
  *   * `--deploy`: force deploy.
+ *   * `--no-js`: deploy replaces *.dart scripts with *.dart.js. You can turn
+ *     this feature off with --no-js, which leaves "packages/browser/dart.js".
+ *   * `--csp`: replaces *.dart with *.dart.precompiled.js to comply with
+ *     Content Security Policy restrictions.
  *   * `--help`: print documentation for each option and exit.
  *
  * Currently not all the flags are used by [lint] or [deploy] above, but they
@@ -263,6 +274,11 @@ CommandLineOptions _options = parseOptions();
  * it with the `--help` command-line flag.
  */
 CommandLineOptions parseOptions([List<String> args]) {
+  if (args == null) {
+    print('warning: the list of arguments from main(List<String> args) now '
+        'needs to be passed explicitly to parseOptions.');
+    args = [];
+  }
   var parser = new ArgParser()
     ..addOption('changed', help: 'The file has changed since the last build.',
         allowMultiple: true)
@@ -277,16 +293,41 @@ CommandLineOptions parseOptions([List<String> args]) {
         help: 'Whether to force deploying.')
     ..addOption('out', abbr: 'o', help: 'Directory to generate files into.',
         defaultsTo: 'out')
+    ..addFlag('js', help:
+        'deploy replaces *.dart scripts with *.dart.js. This flag \n'
+        'leaves "packages/browser/dart.js" to do the replacement at runtime.',
+        defaultsTo: true)
+    ..addFlag('csp', help:
+        'replaces *.dart with *.dart.precompiled.js to comply with \n'
+        'Content Security Policy restrictions.')
+    ..addFlag('debug', help:
+        'run in debug mode. For example, use the debug versions of the \n'
+        'polyfills (shadow_dom.debug.js and custom-elements.debug.js) \n'
+        'instead of the minified versions.',
+        defaultsTo: false)
     ..addFlag('help', abbr: 'h',
         negatable: false, help: 'Displays this help and exit.');
-  var res = parser.parse(args == null ? new Options().arguments : args);
-  if (res['help']) {
-    print('A build script that invokes the polymer linter and deploy tools.');
+
+  showUsage() {
     print('Usage: dart build.dart [options]');
     print('\nThese are valid options expected by build.dart:');
     print(parser.getUsage());
+  }
+
+  var res;
+  try {
+    res = parser.parse(args);
+  } on FormatException catch (e) {
+    print(e.message);
+    showUsage();
+    exit(1);
+  }
+  if (res['help']) {
+    print('A build script that invokes the polymer linter and deploy tools.');
+    showUsage();
     exit(0);
   }
   return new CommandLineOptions(res['changed'], res['removed'], res['clean'],
-      res['full'], res['machine'], res['deploy'], res['out']);
+      res['full'], res['machine'], res['deploy'], res['out'], res['js'],
+      res['csp'], !res['debug']);
 }

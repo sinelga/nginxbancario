@@ -8,7 +8,7 @@ import 'visitor.dart';
 
 // Helper functions for building expression trees programmatically
 
-EmptyExpression empty() => new EmptyExpression();
+EmptyExpression empty() => const EmptyExpression();
 Literal literal(v) => new Literal(v);
 MapLiteral mapLiteral(List<MapLiteralEntry> entries) => new MapLiteral(entries);
 MapLiteralEntry mapLiteralEntry(Literal key, Expression value) =>
@@ -18,13 +18,15 @@ ParenthesizedExpression paren(Expression e) => new ParenthesizedExpression(e);
 UnaryOperator unary(String op, Expression e) => new UnaryOperator(op, e);
 BinaryOperator binary(Expression l, String op, Expression r) =>
     new BinaryOperator(l, op, r);
-Invoke invoke(Expression e, String m, [List<Expression> a]) =>
+Getter getter(Expression e, String m) => new Getter(e, m);
+Index index(Expression e, Expression a) => new Index(e, a);
+Invoke invoke(Expression e, String m, List<Expression> a) =>
     new Invoke(e, m, a);
 InExpression inExpr(Expression l, Expression r) => new InExpression(l, r);
 
 
 class AstFactory {
-  EmptyExpression empty() => new EmptyExpression();
+  EmptyExpression empty() => const EmptyExpression();
 
   Literal literal(v) => new Literal(v);
 
@@ -44,7 +46,11 @@ class AstFactory {
   BinaryOperator binary(Expression l, String op, Expression r) =>
       new BinaryOperator(l, op, r);
 
-  Invoke invoke(Expression e, String m, [List<Expression> a]) =>
+  Getter getter(Expression g, String n) => new Getter(g, n);
+
+  Index index(Expression e, Expression a) => new Index(e, a);
+
+  Invoke invoke(Expression e, String m, List<Expression> a) =>
       new Invoke(e, m, a);
 
   InExpression inExpr(Expression l, Expression r) => new InExpression(l, r);
@@ -52,12 +58,13 @@ class AstFactory {
 
 /// Base class for all expressions
 abstract class Expression {
+  const Expression();
   accept(Visitor v);
 }
 
 class EmptyExpression extends Expression {
+  const EmptyExpression();
   accept(Visitor v) => v.visitEmptyExpression(this);
-  bool operator ==(o) => o is EmptyExpression;
 }
 
 class Literal<T> extends Expression {
@@ -182,6 +189,44 @@ class InExpression extends Expression {
   int get hashCode => _JenkinsSmiHash.hash2(left.hashCode, right.hashCode);
 }
 
+class Index extends Expression {
+  final Expression receiver;
+  final Expression argument;
+
+  Index(this.receiver, this.argument);
+
+  accept(Visitor v) => v.visitIndex(this);
+
+  String toString() => '$receiver[$argument]';
+
+  bool operator ==(o) =>
+      o is Index
+      && o.receiver == receiver
+      && o.argument == argument;
+
+  int get hashCode =>
+      _JenkinsSmiHash.hash2(receiver.hashCode, argument.hashCode);
+}
+
+class Getter extends Expression {
+  final Expression receiver;
+  final String name;
+
+  Getter(this.receiver, this.name);
+
+  accept(Visitor v) => v.visitGetter(this);
+
+  String toString() => '$receiver.$name';
+
+  bool operator ==(o) =>
+      o is Getter
+      && o.receiver == receiver
+      && o.name == name;
+
+  int get hashCode => _JenkinsSmiHash.hash2(receiver.hashCode, name.hashCode);
+
+}
+
 /**
  * Represents a function or method invocation. If [method] is null, then
  * [receiver] is an expression that should evaluate to a function. If [method]
@@ -193,11 +238,11 @@ class Invoke extends Expression {
   final String method;
   final List<Expression> arguments;
 
-  Invoke(this.receiver, this.method, [this.arguments]);
+  Invoke(this.receiver, this.method, this.arguments) {
+    assert(arguments != null);
+  }
 
   accept(Visitor v) => v.visitInvoke(this);
-
-  bool get isGetter => arguments == null;
 
   String toString() => '$receiver.$method($arguments)';
 
@@ -242,10 +287,11 @@ class _JenkinsSmiHash {
     return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
   }
 
-  static int hash2(a, b) => finish(combine(combine(0, a), b));
+  static int hash2(int a, int b) => finish(combine(combine(0, a), b));
 
-  static int hash3(a, b, c) => finish(combine(combine(combine(0, a), b), c));
+  static int hash3(int a, int b, int c) =>
+      finish(combine(combine(combine(0, a), b), c));
 
-  static int hash4(a, b, c, d) =>
+  static int hash4(int a, int b, int c, int d) =>
       finish(combine(combine(combine(combine(0, a), b), c), d));
 }

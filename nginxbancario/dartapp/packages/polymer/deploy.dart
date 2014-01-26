@@ -27,18 +27,28 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
+import 'src/build/common.dart' show TransformOptions;
 import 'src/build/runner.dart';
 import 'transformer.dart';
 
-main() {
-  var args = _parseArgs(new Options().arguments);
+main(List<String> arguments) {
+  var args = _parseArgs(arguments);
   if (args == null) exit(1);
 
   var test = args['test'];
   var outDir = args['out'];
-  var options = (test == null)
-    ? new BarbackOptions(createDeployPhases(new TransformOptions()), outDir)
-    : _createTestOptions(test, outDir);
+
+  var options;
+  if (test == null) {
+    var transformOps = new TransformOptions(
+        directlyIncludeJS: args['js'],
+        contentSecurityPolicy: args['csp'],
+        releaseMode: !args['debug']);
+    options = new BarbackOptions(createDeployPhases(transformOps), outDir);
+  } else {
+    options = _createTestOptions(
+        test, outDir, args['js'], args['csp'], !args['debug']);
+  }
   if (options == null) exit(1);
 
   print('polymer/deploy.dart: creating a deploy target for '
@@ -49,7 +59,10 @@ main() {
       .catchError(_reportErrorAndExit);
 }
 
-BarbackOptions _createTestOptions(String testFile, String outDir) {
+createDeployPhases(options) => new PolymerTransformerGroup(options).phases;
+
+BarbackOptions _createTestOptions(String testFile, String outDir,
+    bool directlyIncludeJS, bool contentSecurityPolicy, bool releaseMode) {
   var testDir = path.normalize(path.dirname(testFile));
 
   // A test must be allowed to import things in the package.
@@ -61,12 +74,16 @@ BarbackOptions _createTestOptions(String testFile, String outDir) {
         'your package root directory or a subdirectory.');
     return null;
   }
+  var packageName = readCurrentPackageFromPubspec(pubspecDir);
 
   var phases = createDeployPhases(new TransformOptions(
-        '_test', [path.relative(testFile, from: pubspecDir)]));
+      entryPoints: [path.relative(testFile, from: pubspecDir)],
+      directlyIncludeJS: directlyIncludeJS,
+      contentSecurityPolicy: contentSecurityPolicy,
+      releaseMode: releaseMode));
   return new BarbackOptions(phases, outDir,
-      currentPackage: '_test',
-      packageDirs: {'_test' : pubspecDir},
+      currentPackage: packageName,
+      packageDirs: {packageName : pubspecDir},
       transformTests: true);
 }
 
@@ -80,8 +97,7 @@ String _findDirWithFile(String dir, String filename) {
   return dir;
 }
 
-void _reportErrorAndExit(e) {
-  var trace = getAttachedStackTrace(e);
+void _reportErrorAndExit(e, trace) {
   print('Uncaught error: $e');
   if (trace != null) print(trace);
   exit(1);
@@ -95,7 +111,19 @@ ArgResults _parseArgs(arguments) {
           defaultsTo: 'out')
       ..addOption('test', help: 'Deploy the test at the given path.\n'
           'Note: currently this will deploy all tests in its directory,\n'
-          'but it will eventually deploy only the specified test.');
+          'but it will eventually deploy only the specified test.')
+      ..addFlag('js', help:
+          'deploy replaces *.dart scripts with *.dart.js. This flag \n'
+          'leaves "packages/browser/dart.js" to do the replacement at runtime.',
+          defaultsTo: true)
+      ..addFlag('debug', help:
+          'run in debug mode. For example, use the debug versions of the \n'
+          'polyfills (shadow_dom.debug.js and custom-elements.debug.js) \n'
+          'instead of the minified versions.',
+          defaultsTo: false)
+      ..addFlag('csp', help:
+          'replaces *.dart with *.dart.precompiled.js to comply with \n'
+          'Content Security Policy restrictions.');
   try {
     var results = parser.parse(arguments);
     if (results['help']) {

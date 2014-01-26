@@ -2,57 +2,31 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of observe;
+library observe.src.change_record;
+
+import 'package:observe/observe.dart';
+
 
 /** Records a change to an [Observable]. */
-abstract class ChangeRecord {
-  // TODO(jmesserly): rename this--it's confusing. Perhaps "matches"?
-  /** True if the change affected the given item, otherwise false. */
-  bool changes(key);
-}
+// TODO(jmesserly): remove this type
+abstract class ChangeRecord {}
 
 /** A change record to a field of an observable object. */
-class PropertyChangeRecord extends ChangeRecord {
-  /** The field that was changed. */
-  final Symbol field;
+class PropertyChangeRecord<T> extends ChangeRecord {
+  /** The object that changed. */
+  final object;
 
-  PropertyChangeRecord(this.field);
+  /** The name of the property that changed. */
+  final Symbol name;
 
-  bool changes(key) => key is Symbol && field == key;
+  /** The previous value of the property. */
+  final T oldValue;
 
-  String toString() => '#<PropertyChangeRecord $field>';
-}
+  /** The new value of the property. */
+  final T newValue;
 
-/** A change record for an observable list. */
-class ListChangeRecord extends ChangeRecord {
-  /** The starting index of the change. */
-  final int index;
+  PropertyChangeRecord(this.object, this.name, this.oldValue, this.newValue);
 
-  /** The number of items removed. */
-  final int removedCount;
-
-  /** The number of items added. */
-  final int addedCount;
-
-  ListChangeRecord(this.index, {this.removedCount: 0, this.addedCount: 0}) {
-    if (addedCount == 0 && removedCount == 0) {
-      throw new ArgumentError('added and removed counts should not both be '
-          'zero. Use 1 if this was a single item update.');
-    }
-  }
-
-  /** Returns true if the provided index was changed by this operation. */
-  bool changes(key) {
-    // If key isn't an int, or before the index, then it wasn't changed.
-    if (key is! int || key < index) return false;
-
-    // If this was a shift operation, anything after index is changed.
-    if (addedCount != removedCount) return true;
-
-    // Otherwise, anything in the update range was changed.
-    return key < index + addedCount;
-  }
-
-  String toString() => '#<ListChangeRecord index: $index, '
-      'removed: $removedCount, addedCount: $addedCount>';
+  String toString() =>
+      '#<PropertyChangeRecord $name from: $oldValue to: $newValue>';
 }

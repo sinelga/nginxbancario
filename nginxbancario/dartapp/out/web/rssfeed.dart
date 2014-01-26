@@ -10,15 +10,10 @@ import "package:jsonp/jsonp.dart" as jsonp;
 
 
 @CustomTag('rss-feed')
-class RssFeed extends PolymerElement with ChangeNotifierMixin{
+class RssFeed extends PolymerElement with ObservableMixin, ChangeNotifier{
     
 //  @observable List count;
-  List __$rssfeedarr;
-  List get rssfeedarr => __$rssfeedarr;
-  set rssfeedarr(List value) {
-    __$rssfeedarr = notifyPropertyChange(const Symbol('rssfeedarr'), __$rssfeedarr, value);
-  }
-  
+  @reflectable @observable List get rssfeedarr => __$rssfeedarr; List __$rssfeedarr; @reflectable set rssfeedarr(List value) { __$rssfeedarr = notifyPropertyChange(#rssfeedarr, __$rssfeedarr, value); }
 //  @observable bool start=false;
 //  @observable int count = 0;
 //  List<RssFeedItem> rssFeedItemArr = new List<RssFeedItem>();

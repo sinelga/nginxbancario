@@ -16,10 +16,10 @@ import 'dart:convert' show JSON;
 import 'package:barback/barback.dart';
 import 'package:html5lib/dom.dart';
 import 'package:html5lib/dom_parsing.dart';
+import 'package:source_maps/span.dart';
 
 import 'common.dart';
-
-typedef String MessageFormatter(String kind, String message, Span span);
+import 'utils.dart';
 
 /**
  * A linter that checks for common Polymer errors and produces warnings to
@@ -32,23 +32,19 @@ class Linter extends Transformer with PolymerTransformer {
   /** Only run on .html files. */
   final String allowedExtensions = '.html';
 
-  final MessageFormatter _formatter;
-
-  Linter(this.options, [this._formatter]);
+  Linter(this.options);
 
   Future apply(Transform transform) {
-    var wrapper = new _LoggerInterceptor(transform, _formatter);
     var seen = new Set<AssetId>();
     var primary = transform.primaryInput;
     var id = primary.id;
-    wrapper.addOutput(primary); // this phase is analysis only
+    transform.addOutput(primary); // this phase is analysis only
     seen.add(id);
-    return readPrimaryAsHtml(wrapper).then((document) {
-      return _collectElements(document, id, wrapper, seen).then((elements) {
-        new _LinterVisitor(wrapper, elements).visit(document);
-        var messagesId = id.addExtension('.messages');
-        wrapper.addOutput(new Asset.fromString(messagesId,
-            wrapper._messages.join('\n')));
+    return readPrimaryAsHtml(transform).then((document) {
+      return _collectElements(document, id, transform, seen).then((elements) {
+        bool isEntrypoint = options.isHtmlEntryPoint(id);
+        new _LinterVisitor(transform.logger, elements, isEntrypoint)
+            .run(document);
       });
     });
   }
@@ -80,7 +76,7 @@ class Linter extends Transformer with PolymerTransformer {
   }
 
   Future<List<AssetId>> _getImportedIds(
-      Document document, AssetId sourceId, Tranform transform) {
+      Document document, AssetId sourceId, Transform transform) {
     var importIds = [];
     var logger = transform.logger;
     for (var tag in document.queryAll('link')) {
@@ -88,12 +84,13 @@ class Linter extends Transformer with PolymerTransformer {
       var href = tag.attributes['href'];
       var span = tag.sourceSpan;
       var id = resolve(sourceId, href, logger, span);
-      if (id == null) continue;
+      if (id == null ||
+          (id.package == 'polymer' && id.path == 'lib/init.html')) continue;
       importIds.add(assetExists(id, transform).then((exists) {
         if (exists) return id;
         if (sourceId == transform.primaryInput.id) {
           logger.error('couldn\'t find imported asset "${id.path}" in package '
-              '"${id.package}".', span);
+              '"${id.package}".', span: span);
         }
       }));
     }
@@ -114,9 +111,9 @@ class Linter extends Transformer with PolymerTransformer {
         if (existing.hasConflict) continue;
         existing.hasConflict = true;
         logger.warning('duplicate definition for custom tag "$name".',
-          existing.span);
+          span: existing.span);
         logger.warning('duplicate definition for custom tag "$name" '
-          ' (second definition).', span);
+          ' (second definition).', span: span);
         continue;
       }
 
@@ -125,72 +122,13 @@ class Linter extends Transformer with PolymerTransformer {
   }
 }
 
-/** A proxy of [Transform] that returns a different logger. */
-// TODO(sigmund): get rid of this when barback supports a better way to log
-// messages without printing them.
-class _LoggerInterceptor implements Transform, TransformLogger {
-  final Transform _original;
-  final List<String> _messages = [];
-  final MessageFormatter _formatter;
-
-  _LoggerInterceptor(this._original, MessageFormatter formatter)
-      : _formatter = formatter == null ? consoleFormatter : formatter;
-
-  TransformLogger get logger => this;
-
-  noSuchMethod(Invocation m) => reflect(_original).delegate(m);
-
-  // form TransformLogger:
-  void warning(String message, [Span span]) => _write('warning', message, span);
-
-  void error(String message, [Span span]) => _write('error', message, span);
-
-  void _write(String kind, String message, Span span) {
-    _messages.add(_formatter(kind, message, span));
-  }
-}
-
-/**
- * Formatter that generates messages using a format that can be parsed
- * by tools, such as the Dart Editor, for reporting error messages.
- */
-String jsonFormatter(String kind, String message, Span span) {
-  return JSON.encode((span == null)
-      ? [{'method': 'warning', 'params': {'message': message}}]
-      : [{'method': kind,
-          'params': {
-            'file': span.sourceUrl,
-            'message': message,
-            'line': span.start.line + 1,
-            'charStart': span.start.offset,
-            'charEnd': span.end.offset,
-          }}]);
-}
-
-/**
- * Formatter that generates messages that are easy to read on the console (used
- * by default).
- */
-String consoleFormatter(String kind, String message, Span span) {
-  var useColors = stdioType(stdout) == StdioType.TERMINAL;
-  var levelColor = (kind == 'error') ? _RED_COLOR : _MAGENTA_COLOR;
-  var output = new StringBuffer();
-  if (useColors) output.write(levelColor);
-  output..write(kind)..write(' ');
-  if (useColors) output.write(_NO_COLOR);
-  if (span == null) {
-    output.write(message);
-  } else {
-    output.write(span.getLocationMessage(message,
-          useColors: useColors,
-          color: levelColor));
-  }
-  return output.toString();
-}
 
 /**
  * Information needed about other polymer-element tags in order to validate
  * how they are used and extended.
+ *
+ * Note: these are only created for polymer-element, because pure custom
+ * elements don't have a declarative form.
  */
 class _ElementSummary {
   final String tagName;
@@ -211,9 +149,11 @@ class _ElementSummary {
 class _LinterVisitor extends TreeVisitor {
   TransformLogger _logger;
   bool _inPolymerElement = false;
+  bool _dartTagSeen = false;
+  bool _isEntrypoint;
   Map<String, _ElementSummary> _elements;
 
-  _LinterVisitor(this._logger, this._elements) {
+  _LinterVisitor(this._logger, this._elements, this._isEntrypoint) {
     // We normalize the map, so each element has a direct reference to any
     // element it extends from.
     for (var tag in _elements.values) {
@@ -236,22 +176,36 @@ class _LinterVisitor extends TreeVisitor {
     }
   }
 
+  void run(Document doc) {
+    visit(doc);
+
+    if (_isEntrypoint && !_dartTagSeen) {
+      _logger.error(USE_INIT_DART, span: doc.body.sourceSpan);
+    }
+  }
+
   /** Produce warnings for invalid link-rel tags. */
   void _validateLinkElement(Element node) {
     var rel = node.attributes['rel'];
     if (rel != 'import' && rel != 'stylesheet') return;
 
+    if (rel == 'import' && _dartTagSeen) {
+      _logger.warning(
+          "Move HTML imports above your Dart script tag.",
+          span: node.sourceSpan);
+    }
+
     var href = node.attributes['href'];
     if (href != null && href != '') return;
 
     // TODO(sigmund): warn also if href can't be resolved.
-    _logger.warning('link rel="$rel" missing href.', node.sourceSpan);
+    _logger.warning('link rel="$rel" missing href.', span: node.sourceSpan);
   }
 
   /** Produce warnings if using `<element>` instead of `<polymer-element>`. */
   void _validateElementElement(Element node) {
     _logger.warning('<element> elements are not supported, use'
-        ' <polymer-element> instead', node.sourceSpan);
+        ' <polymer-element> instead', span: node.sourceSpan);
   }
 
   /**
@@ -261,7 +215,7 @@ class _LinterVisitor extends TreeVisitor {
   void _validatePolymerElement(Element node) {
     if (_inPolymerElement) {
       _logger.error('Nested polymer element definitions are not allowed.',
-          node.sourceSpan);
+          span: node.sourceSpan);
       return;
     }
 
@@ -271,17 +225,30 @@ class _LinterVisitor extends TreeVisitor {
     if (tagName == null) {
       _logger.error('Missing tag name of the custom element. Please include an '
           'attribute like \'name="your-tag-name"\'.',
-          node.sourceSpan);
+          span: node.sourceSpan);
     } else if (!_isCustomTag(tagName)) {
       _logger.error('Invalid name "$tagName". Custom element names must have '
           'at least one dash and can\'t be any of the following names: '
           '${_invalidTagNames.keys.join(", ")}.',
-          node.sourceSpan);
+          span: node.sourceSpan);
     }
 
     if (_elements[extendsTag] == null && _isCustomTag(extendsTag)) {
       _logger.warning('custom element with name "$extendsTag" not found.',
-          node.sourceSpan);
+          span: node.sourceSpan);
+    }
+
+    var attrs = node.attributes['attributes'];
+    if (attrs != null) {
+      var attrsSpan = node.attributeSpans['attributes'];
+
+      // names='a b c' or names='a,b,c'
+      // record each name for publishing
+      for (var attr in attrs.split(attrs.contains(',') ? ',' : ' ')) {
+        // remove excess ws
+        attr = attr.trim();
+        if (!_validateCustomAttributeName(attr, attrsSpan)) break;
+      }
     }
 
     var oldValue = _inPolymerElement;
@@ -303,6 +270,7 @@ class _LinterVisitor extends TreeVisitor {
    */
   void _validateScriptElement(Element node) {
     var scriptType = node.attributes['type'];
+    var isDart = scriptType == 'application/dart';
     var src = node.attributes['src'];
 
     if (scriptType == null) {
@@ -313,29 +281,39 @@ class _LinterVisitor extends TreeVisitor {
         // that the code is indeed using Dart.
         _logger.warning('script tag in polymer element with no type will '
             'be treated as JavaScript. Did you forget type="application/dart"?',
-            node.sourceSpan);
+            span: node.sourceSpan);
       }
-      if (src != null && src.endsWith('.dart')) {
-        _logger.warning('script tag with .dart source file but no type will '
-            'be treated as JavaScript. Did you forget type="application/dart"?',
-            node.sourceSpan);
+    } else if (isDart) {
+      if (_dartTagSeen) {
+        _logger.warning('Only one "application/dart" script tag per document '
+            'is allowed.', span: node.sourceSpan);
       }
+      _dartTagSeen = true;
+    }
+
+    if (src == null) return;
+
+    if (src == 'packages/polymer/boot.js') {
+      _logger.warning(BOOT_JS_DEPRECATED, span: node.sourceSpan);
       return;
     }
 
-    if (scriptType != 'application/dart') return;
+    if (src.endsWith('.dart') && !isDart) {
+      _logger.warning('Wrong script type, expected type="application/dart".',
+          span: node.sourceSpan);
+      return;
+    }
 
-    if (src != null) {
-      if (!src.endsWith('.dart')) {
-        _logger.warning('"application/dart" scripts should '
-            'use the .dart file extension.',
-            node.sourceSpan);
-      }
+    if (!src.endsWith('.dart') && isDart) {
+      _logger.warning('"application/dart" scripts should '
+          'use the .dart file extension.',
+          span: node.sourceSpan);
+      return;
+    }
 
-      if (node.innerHtml.trim() != '') {
-        _logger.warning('script tag has "src" attribute and also has script '
-            'text.', node.sourceSpan);
-      }
+    if (node.innerHtml.trim() != '') {
+      _logger.warning('script tag has "src" attribute and also has script '
+          'text.', span: node.sourceSpan);
     }
   }
 
@@ -346,7 +324,7 @@ class _LinterVisitor extends TreeVisitor {
   void _validateNormalElement(Element node) {
     // Event handlers only allowed inside polymer-elements
     node.attributes.forEach((name, value) {
-      if (name.startsWith('on')) {
+      if (name is String && name.startsWith('on')) {
         _validateEventHandler(node, name, value);
       }
     });
@@ -369,10 +347,13 @@ class _LinterVisitor extends TreeVisitor {
 
     var info = _elements[customTagName];
     if (info == null) {
-      _logger.warning('definition for custom element with tag name '
-          '"$customTagName" not found.', node.sourceSpan);
+      // TODO(jmesserly): this warning is wrong if someone is using raw custom
+      // elements. Is there another way we can handle this warning that won't
+      // generate false positives?
+      _logger.warning('definition for Polymer element with tag name '
+          '"$customTagName" not found.', span: node.sourceSpan);
       return;
-    } 
+    }
 
     var baseTag = info.baseExtendsTag;
     if (baseTag != null && !hasIsAttribute) {
@@ -381,25 +362,39 @@ class _LinterVisitor extends TreeVisitor {
           'this tag will not include the default properties of "$baseTag". '
           'To fix this, either write this tag as <$baseTag '
           'is="$customTagName"> or remove the "extends" attribute from '
-          'the custom element declaration.', node.sourceSpan);
+          'the custom element declaration.', span: node.sourceSpan);
       return;
     }
-    
+
     if (hasIsAttribute && baseTag == null) {
       _logger.warning(
           'custom element "$customTagName" doesn\'t declare any type '
           'extensions. To fix this, either rewrite this tag as '
           '<$customTagName> or add \'extends="$nodeTag"\' to '
-          'the custom element declaration.', node.sourceSpan);
+          'the custom element declaration.', span: node.sourceSpan);
       return;
     }
-    
+
     if (hasIsAttribute && baseTag != nodeTag) {
       _logger.warning(
           'custom element "$customTagName" extends from "$baseTag". '
           'Did you mean to write <$baseTag is="$customTagName">?',
-          node.sourceSpan);
+          span: node.sourceSpan);
     }
+  }
+
+  /**
+   * Validate an attribute on a custom-element. Returns true if valid.
+   */
+  bool _validateCustomAttributeName(String name, FileSpan span) {
+    if (name.contains('-')) {
+      var newName = toCamelCase(name);
+      _logger.warning('PolymerElement no longer recognizes attribute names with '
+          'dashes such as "$name". Use "$newName" or "${newName.toLowerCase()}" '
+          'instead (both forms are equivalent in HTML).', span: span);
+      return false;
+    }
+    return true;
   }
 
   /** Validate event handlers are used correctly. */
@@ -409,20 +404,21 @@ class _LinterVisitor extends TreeVisitor {
           ' JavaScript event handler. Use the form '
           'on-event-name="handlerName" if you want a Dart handler '
           'that will automatically update the UI based on model changes.',
-          node.sourceSpan);
+          span: node.attributeSpans[name]);
       return;
     }
 
     if (!_inPolymerElement) {
       _logger.warning('Inline event handlers are only supported inside '
-          'declarations of <polymer-element>.', node.sourceSpan);
+          'declarations of <polymer-element>.',
+          span: node.attributeSpans[name]);
     }
 
     if (value.contains('.') || value.contains('(')) {
       _logger.warning('Invalid event handler body "$value". Declare a method '
           'in your custom element "void handlerName(event, detail, target)" '
           'and use the form $name="handlerName".',
-          node.sourceSpan);
+          span: node.attributeSpans[name]);
     }
   }
 }
@@ -450,6 +446,18 @@ bool _isCustomTag(String name) {
   return !_invalidTagNames.containsKey(name);
 }
 
-final String _RED_COLOR = '\u001b[31m';
-final String _MAGENTA_COLOR = '\u001b[35m';
-final String _NO_COLOR = '\u001b[0m';
+const String USE_INIT_DART =
+    'To run a polymer application, you need to call "initPolymer". You can '
+    'either include a generic script tag that does this for you:'
+    '\'<script type="application/dart">export "package:polymer/init.dart";'
+    '</script>\' or add your own script tag and call that function. '
+    'Make sure the script tag is placed after all HTML imports.';
+
+const String BOOT_JS_DEPRECATED =
+    '"boot.js" is now deprecated. Instead, you can initialize your polymer '
+    'application by calling "initPolymer()" in your main. If you don\'t have a '
+    'main, then you can include our generic main by adding the following '
+    'script tag to your page: \'<script type="application/dart">export '
+    '"package:polymer/init.dart";</script>\'. Additionally you need to '
+    'include: \'<script src="packages/browser/dart.js"></script>\' in the page '
+    'too. Make sure these script tags come after all HTML imports.';

@@ -2,32 +2,29 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of observe;
+library observe.src.change_notifier;
+
+import 'dart:async';
+import 'dart:collection' show UnmodifiableListView;
+import 'package:observe/observe.dart';
+import 'package:observe/src/observable.dart' show notifyPropertyChangeHelper;
 
 /**
- * Base class implementing [Observable] object that performs its own change
- * notifications, and does not need to be considered by [Observable.dirtyCheck].
+ * Mixin and base class for implementing an [Observable] object that performs
+ * its own change notifications, and does not need to be considered by
+ * [Observable.dirtyCheck].
  *
  * When a field, property, or indexable item is changed, a derived class should
  * call [notifyPropertyChange]. See that method for an example.
  */
-typedef ChangeNotifierBase = Object with ChangeNotifierMixin;
-
-/**
- * Mixin implementing [Observable] object that performs its own change
- * notifications, and does not need to be considered by [Observable.dirtyCheck].
- *
- * When a field, property, or indexable item is changed, a derived class should
- * call [notifyPropertyChange]. See that method for an example.
- */
-abstract class ChangeNotifierMixin implements Observable {
+abstract class ChangeNotifier implements Observable {
   StreamController _changes;
   List<ChangeRecord> _records;
 
   Stream<List<ChangeRecord>> get changes {
     if (_changes == null) {
       _changes = new StreamController.broadcast(sync: true,
-          onListen: _observed, onCancel: _unobserved);
+          onListen: observed, onCancel: unobserved);
     }
     return _changes.stream;
   }
@@ -37,13 +34,16 @@ abstract class ChangeNotifierMixin implements Observable {
   /**
    * Override this method to be called when the [changes] are first observed.
    */
-  void _observed() {}
+  void observed() {}
 
   /**
    * Override this method to be called when the [changes] are no longer being
    * observed.
    */
-  void _unobserved() {}
+  void unobserved() {
+    // Free some memory
+    _changes = null;
+  }
 
   bool deliverChanges() {
     var records = _records;
@@ -65,27 +65,26 @@ abstract class ChangeNotifierMixin implements Observable {
    * Notify that the field [name] of this object has been changed.
    *
    * The [oldValue] and [newValue] are also recorded. If the two values are
-   * identical, no change will be recorded.
+   * equal, no change will be recorded.
    *
    * For convenience this returns [newValue]. This makes it easy to use in a
    * setter:
    *
    *     var _myField;
-   *     get myField => _myField;
-   *     set myField(value) {
-   *       _myField = notifyPropertyChange(
-   *           const Symbol('myField'), _myField, value);
+   *     @reflectable get myField => _myField;
+   *     @reflectable set myField(value) {
+   *       _myField = notifyPropertyChange(#myField, _myField, value);
    *     }
    */
   notifyPropertyChange(Symbol field, Object oldValue, Object newValue)
-      => _notifyPropertyChange(this, field, oldValue, newValue);
+      => notifyPropertyChangeHelper(this, field, oldValue, newValue);
 
   void notifyChange(ChangeRecord record) {
     if (!hasObservers) return;
 
     if (_records == null) {
       _records = [];
-      runAsync(deliverChanges);
+      scheduleMicrotask(deliverChanges);
     }
     _records.add(record);
   }

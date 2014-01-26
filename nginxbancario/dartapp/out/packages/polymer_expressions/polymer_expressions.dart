@@ -30,12 +30,14 @@ library polymer_expressions;
 import 'dart:async';
 import 'dart:html';
 
-import 'package:observe/observe.dart';
 import 'package:logging/logging.dart';
+import 'package:observe/observe.dart';
+import 'package:template_binding/template_binding.dart';
 
 import 'eval.dart';
 import 'expression.dart';
 import 'parser.dart';
+import 'src/globals.dart';
 
 final Logger _logger = new Logger('polymer_expressions');
 
@@ -51,39 +53,53 @@ Object _styleAttributeConverter(v) =>
     v;
 
 class PolymerExpressions extends BindingDelegate {
+  /** The default [globals] to use for Polymer expressions. */
+  static const Map DEFAULT_GLOBALS = const { 'enumerate': enumerate };
 
   final Map<String, Object> globals;
 
+  /**
+   * Creates a new binding delegate for Polymer expressions, with the provided
+   * variables used as [globals]. If no globals are supplied, a copy of the
+   * [DEFAULT_GLOBALS] will be used.
+   */
   PolymerExpressions({Map<String, Object> globals})
-      : globals = (globals == null) ? new Map<String, Object>() : globals;
+      : globals = (globals == null) ?
+          new Map<String, Object>.from(DEFAULT_GLOBALS) : globals;
 
-  _Binding getBinding(model, String path, name, node) {
+  prepareBinding(String path, name, node) {
     if (path == null) return null;
     var expr = new Parser(path).parse();
-    if (model is! Scope) {
-      model = new Scope(model: model, variables: globals);
+
+    // For template bind/repeat to an empty path, just pass through the model.
+    // We don't want to unwrap the Scope.
+    // TODO(jmesserly): a custom element extending <template> could notice this
+    // behavior. An alternative is to associate the Scope with the node via an
+    // Expando, which is what the JavaScript PolymerExpressions does.
+    if (isSemanticTemplate(node) && (name == 'bind' || name == 'repeat') &&
+        expr is EmptyExpression) {
+      return null;
     }
-    if (node is Element && name == "class") {
-      return new _Binding(expr, model, _classAttributeConverter);
-    }
-    if (node is Element && name == "style") {
-      return new _Binding(expr, model, _styleAttributeConverter);
-    }
-    return new _Binding(expr, model);
+
+    return (model, node) {
+      if (model is! Scope) {
+        model = new Scope(model: model, variables: globals);
+      }
+      if (node is Element && name == "class") {
+        return new _Binding(expr, model, _classAttributeConverter);
+      }
+      if (node is Element && name == "style") {
+        return new _Binding(expr, model, _styleAttributeConverter);
+      }
+      return new _Binding(expr, model);
+    };
   }
 
-  getInstanceModel(Element template, model) {
-    if (model is! Scope) {
-      var _scope = new Scope(model: model, variables: globals);
-      return _scope;
-    }
-    return model;
-  }
+  prepareInstanceModel(Element template) => (model) =>
+      model is Scope ? model : new Scope(model: model, variables: globals);
 }
 
-class _Binding extends Object with ChangeNotifierMixin {
-  static const _VALUE = const Symbol('value');
-
+class _Binding extends ChangeNotifier {
   final Scope _scope;
   final ExpressionObserver _expr;
   final _converter;
@@ -104,6 +120,7 @@ class _Binding extends Object with ChangeNotifierMixin {
   }
 
   _setValue(v) {
+    var oldValue = _value;
     if (v is Comprehension) {
       // convert the Comprehension into a list of scopes with the loop
       // variable added to the scope
@@ -116,26 +133,16 @@ class _Binding extends Object with ChangeNotifierMixin {
     } else {
       _value = (_converter == null) ? v : _converter(v);
     }
-    notifyChange(new PropertyChangeRecord(_VALUE));
+    notifyPropertyChange(#value, oldValue, _value);
   }
 
-  get value => _value;
+  @reflectable get value => _value;
 
-  set value(v) {
+  @reflectable set value(v) {
     try {
       assign(_expr, v, _scope);
-      notifyChange(new PropertyChangeRecord(_VALUE));
     } on EvalException catch (e) {
-      // silently swallow binding errors
+      _logger.warning("Error evaluating expression '$_expr': ${e.message}");
     }
   }
-
-  getValueWorkaround(key) {
-    if (key == _VALUE) return value;
-  }
-
-  setValueWorkaround(key, v) {
-    if (key == _VALUE) value = v;
-  }
-
 }

@@ -6,6 +6,9 @@ library polymer_expressions.eval;
 
 import 'dart:async';
 import 'dart:collection';
+
+@MirrorsUsed(metaTargets: const [Reflectable, ObservableProperty],
+    override: 'polymer_expressions.eval')
 import 'dart:mirrors';
 
 import 'package:observe/observe.dart';
@@ -104,17 +107,20 @@ void assign(Expression expr, Object value, Scope scope) {
     expression = empty();
     Identifier ident = expr;
     property = ident.value;
+  } else if (expr is Index) {
+    if (expr.argument is! Literal) notAssignable();
+    expression = expr.receiver;
+    Literal l = expr.argument;
+    property = l.value;
+    isIndex = true;
+  } else if (expr is Getter) {
+    expression = expr.receiver;
+    property = expr.name;
   } else if (expr is Invoke) {
-    Invoke invoke = expr;
-    expression = invoke.receiver;
-    if (invoke.method == '[]') {
-      if (invoke.arguments[0] is! Literal) notAssignable();
-      Literal l = invoke.arguments[0];
-      property = l.value;
-      isIndex = true;
-    } else if (invoke.method != null) {
-      if (invoke.arguments != null) notAssignable();
-      property = invoke.method;
+    expression = expr.receiver;
+    if (expr.method != null) {
+      if (expr.arguments != null) notAssignable();
+      property = expr.method;
     } else {
       notAssignable();
     }
@@ -148,15 +154,15 @@ void assign(Expression expr, Object value, Scope scope) {
  * Scopes can be nested by giving them a [parent]. If a name in not found in a
  * Scope, it will look for it in it's parent.
  */
-class Scope extends Object {
+class Scope {
   final Scope parent;
   final Object model;
   // TODO(justinfagnani): disallow adding/removing names
   final ObservableMap<String, Object> _variables;
   InstanceMirror __modelMirror;
 
-  Scope({this.model, Map<String, Object> variables: const {}, this.parent})
-      : _variables = new ObservableMap.from(variables);
+  Scope({this.model, Map<String, Object> variables, this.parent})
+      : _variables = new ObservableMap.from(variables == null ? {} : variables);
 
   InstanceMirror get _modelMirror {
     if (__modelMirror != null) return __modelMirror;
@@ -173,6 +179,8 @@ class Scope extends Object {
       var symbol = new Symbol(name);
       var classMirror = _modelMirror.type;
       var memberMirror = getMemberMirror(classMirror, symbol);
+      // TODO(jmesserly): simplify once dartbug.com/13002 is fixed.
+      // This can just be "if memberMirror != null" and delete the Method class.
       if (memberMirror is VariableMirror ||
           (memberMirror is MethodMirror && memberMirror.isGetter)) {
         return _convert(_modelMirror.getField(symbol).reflectee);
@@ -299,6 +307,22 @@ class ObserverBuilder extends Visitor {
 
   visitParenthesizedExpression(ParenthesizedExpression e) => visit(e.child);
 
+  visitGetter(Getter g) {
+    var receiver = visit(g.receiver);
+    var getter = new GetterObserver(g, receiver);
+    receiver._parent = getter;
+    return getter;
+  }
+
+  visitIndex(Index i) {
+    var receiver = visit(i.receiver);
+    var arg = visit(i.argument);
+    var index =  new IndexObserver(i, receiver, arg);
+    receiver._parent = index;
+    arg._parent = index;
+    return index;
+  }
+
   visitInvoke(Invoke i) {
     var receiver = visit(i.receiver);
     var args = (i.arguments == null)
@@ -415,20 +439,20 @@ class IdentifierObserver extends ExpressionObserver<Identifier>
 
   IdentifierObserver(Identifier value) : super(value);
 
-  dynamic get value => _expr.value;
+  String get value => _expr.value;
 
   _updateSelf(Scope scope) {
-    _value = scope[_expr.value];
+    _value = scope[value];
 
-    var owner = scope.ownerOf(_expr.value);
+    var owner = scope.ownerOf(value);
     if (owner is Observable) {
-      _subscription = (owner as Observable).changes.listen(
-          (List<ChangeRecord> changes) {
-            var symbol = new Symbol(_expr.value);
-            if (changes.any((c) => c.changes(symbol))) {
-              _invalidate(scope);
-            }
-          });
+      var symbol = new Symbol(value);
+      _subscription = (owner as Observable).changes.listen((changes) {
+        if (changes.any(
+            (c) => c is PropertyChangeRecord && c.name == symbol)) {
+          _invalidate(scope);
+        }
+      });
     }
   }
 
@@ -489,6 +513,10 @@ class BinaryObserver extends ExpressionObserver<BinaryOperator>
     } else if (left._value == null || right._value == null) {
       _value = null;
     } else {
+      if (operator == '|' && left._value is ObservableList) {
+        _subscription = (left._value as ObservableList).listChanges
+            .listen((_) => _invalidate(scope));
+      }
       _value = f(left._value, right._value);
     }
   }
@@ -497,69 +525,100 @@ class BinaryObserver extends ExpressionObserver<BinaryOperator>
 
 }
 
+class GetterObserver extends ExpressionObserver<Getter> implements Getter {
+  final ExpressionObserver receiver;
+
+  GetterObserver(Expression expr, this.receiver) : super(expr);
+
+  String get name => _expr.name;
+
+  _updateSelf(Scope scope) {
+    var receiverValue = receiver._value;
+    if (receiverValue == null) {
+      _value = null;
+      return;
+    }
+    var mirror = reflect(receiverValue);
+    var symbol = new Symbol(_expr.name);
+    _value = mirror.getField(symbol).reflectee;
+
+    if (receiverValue is Observable) {
+      _subscription = (receiverValue as Observable).changes.listen((changes) {
+        if (changes.any((c) => c is PropertyChangeRecord && c.name == symbol)) {
+          _invalidate(scope);
+        }
+      });
+    }
+  }
+
+  accept(Visitor v) => v.visitGetter(this);
+}
+
+class IndexObserver extends ExpressionObserver<Index> implements Index {
+  final ExpressionObserver receiver;
+  final ExpressionObserver argument;
+
+  IndexObserver(Expression expr, this.receiver, this.argument) : super(expr);
+
+  _updateSelf(Scope scope) {
+    var receiverValue = receiver._value;
+    if (receiverValue == null) {
+      _value = null;
+      return;
+    }
+    var key = argument._value;
+    _value = receiverValue[key];
+
+    if (receiverValue is Observable) {
+      _subscription = (receiverValue as Observable).changes.listen((changes) {
+        if (changes.any((c) => c is MapChangeRecord && c.key == key)) {
+          _invalidate(scope);
+        }
+      });
+    }
+  }
+
+  accept(Visitor v) => v.visitIndex(this);
+}
+
 class InvokeObserver extends ExpressionObserver<Invoke> implements Invoke {
   final ExpressionObserver receiver;
-  List<ExpressionObserver> arguments;
+  final List<ExpressionObserver> arguments;
 
-  InvokeObserver(Expression expr, this.receiver, [this.arguments])
-      : super(expr);
-
-  bool get isGetter => _expr.isGetter;
+  InvokeObserver(Expression expr, this.receiver, this.arguments)
+      : super(expr) {
+    assert(arguments != null);
+  }
 
   String get method => _expr.method;
 
   _updateSelf(Scope scope) {
-    var args = (arguments == null)
-        ? []
-        : arguments.map((a) => a._value)
-            .toList(growable: false);
+    var args = arguments.map((a) => a._value).toList();
     var receiverValue = receiver._value;
     if (receiverValue == null) {
       _value = null;
-    } else if (_expr.method == null) {
-      if (_expr.isGetter) {
-        // getter, but not a top-level identifier
-        // TODO(justin): listen to the receiver's owner
-        _value = receiverValue;
-      } else {
-        // top-level function or model method
-        // TODO(justin): listen to model changes to see if the method has
-        // changed? listen to the scope to see if the top-level method has
-        // changed?
-        assert(receiverValue is Function);
-        _value = call(receiverValue, args);
-      }
+      return;
+    }
+    if (_expr.method == null) {
+      // top-level function or model method
+      // TODO(justin): listen to model changes to see if the method has
+      // changed? listen to the scope to see if the top-level method has
+      // changed?
+      assert(receiverValue is Function);
+      _value = call(receiverValue, args);
     } else {
-      // special case [] because we don't need mirrors
-      if (_expr.method == '[]') {
-        assert(args.length == 1);
-        var key = args[0];
-        _value = receiverValue[key];
+      var mirror = reflect(receiverValue);
+      var symbol = new Symbol(_expr.method);
+      _value = mirror.invoke(symbol, args, null).reflectee;
 
-        if (receiverValue is Observable) {
-          _subscription = (receiverValue as Observable).changes.listen(
-              (List<ChangeRecord> changes) {
-                if (changes.any((c) =>
-                    c is MapChangeRecord && c.changes(key))) {
-                  _invalidate(scope);
-                }
-              });
-        }
-      } else {
-        var mirror = reflect(receiverValue);
-        var symbol = new Symbol(_expr.method);
-        _value = (_expr.isGetter)
-            ? mirror.getField(symbol).reflectee
-            : mirror.invoke(symbol, args, null).reflectee;
-
-        if (receiverValue is Observable) {
-          _subscription = (receiverValue as Observable).changes.listen(
-              (List<ChangeRecord> changes) {
-                if (changes.any((c) => c.changes(symbol))) {
-                  _invalidate(scope);
-                }
-              });
-        }
+      if (receiverValue is Observable) {
+        _subscription = (receiverValue as Observable).changes.listen(
+            (List<ChangeRecord> changes) {
+              if (changes.any(
+                  (c) => c is PropertyChangeRecord && c.name == symbol)) {
+                _invalidate(scope);
+              }
+            });
       }
     }
   }
@@ -583,12 +642,7 @@ class InObserver extends ExpressionObserver<InExpression>
     }
 
     if (iterable is ObservableList) {
-      _subscription = (iterable as ObservableList).changes.listen(
-          (List<ChangeRecord> changes) {
-            if (changes.any((c) => c is ListChangeRecord)) {
-              _invalidate(scope);
-            }
-          });
+      _subscription = iterable.listChanges.listen((_) => _invalidate(scope));
     }
 
     // TODO: make Comprehension observable and update it
@@ -600,13 +654,18 @@ class InObserver extends ExpressionObserver<InExpression>
 
 _toBool(v) => (v == null) ? false : v;
 
-call(dynamic receiver, List args) {
+/** Call a [Function] or a [Method]. */
+// TODO(jmesserly): remove this once dartbug.com/13002 is fixed.
+// Just inline `_convert(Function.apply(...))` to the call site.
+Object call(Object receiver, List args) {
+  var result;
   if (receiver is Method) {
-    return
-        _convert(receiver.mirror.invoke(receiver.symbol, args, null).reflectee);
+    Method method = receiver;
+    result = method.mirror.invoke(method.symbol, args, null).reflectee;
   } else {
-    return _convert(Function.apply(receiver, args, null));
+    result = Function.apply(receiver, args, null);
   }
+  return _convert(result);
 }
 
 /**
@@ -622,16 +681,18 @@ class Comprehension {
       : iterable = (iterable != null) ? iterable : const [];
 }
 
-/**
- * A method on a model object in a [Scope].
- */
-class Method { //implements _FunctionWrapper {
+/** A method on a model object in a [Scope]. */
+class Method {
   final InstanceMirror mirror;
   final Symbol symbol;
 
   Method(this.mirror, this.symbol);
 
-  dynamic call(List args) => mirror.invoke(symbol, args, null).reflectee;
+  /**
+   * Support for calling single argument methods like [Filter]s.
+   * This does not work for calls that need to pass more than one argument.
+   */
+  call(arg0) => mirror.invoke(symbol, [arg0], null).reflectee;
 }
 
 class EvalException implements Exception {

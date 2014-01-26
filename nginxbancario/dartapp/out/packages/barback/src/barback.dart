@@ -9,6 +9,7 @@ import 'dart:async';
 import 'asset.dart';
 import 'asset_id.dart';
 import 'asset_set.dart';
+import 'log.dart';
 import 'build_result.dart';
 import 'errors.dart';
 import 'package_graph.dart';
@@ -64,6 +65,12 @@ class Barback {
   /// emitted through the [results] stream's error channel.
   Stream get errors => _graph.errors;
 
+  /// The stream of [LogEntry] objects used to report transformer log entries.
+  ///
+  /// If this stream has listeners, then log entries will go to that.
+  /// Otherwise, a default logger will display them.
+  Stream<LogEntry> get log => _graph.log;
+
   Barback(PackageProvider provider)
       : _graph = new PackageGraph(provider);
 
@@ -102,7 +109,10 @@ class Barback {
   ///
   /// To the extent that [transformers] is similar to the previous transformer
   /// phases for [package], the existing asset graph will be preserved.
+  ///
+  /// Elements of the inner iterable of [transformers] must be either
+  /// [Transformer]s or [TransformerGroup]s.
   void updateTransformers(String package,
-          Iterable<Iterable<Transformer>> transformers) =>
+          Iterable<Iterable> transformers) =>
       _graph.updateTransformers(package, transformers);
 }

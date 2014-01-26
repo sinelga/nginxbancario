@@ -1,14 +1,14 @@
 library app_bootstrap;
 
 import 'package:polymer/polymer.dart';
-import 'dart:mirrors' show currentMirrorSystem;
 
 import 'rssfeed.dart' as i0;
-import 'dartapp.dart' as i1;
+import 'dartapp.html.0.dart' as i1;
 
 void main() {
-  initPolymer([
+  configureForDeployment([
       'rssfeed.dart',
-      'dartapp.dart',
-    ], currentMirrorSystem().isolate.rootLibrary.uri.toString());
+      'dartapp.html.0.dart',
+    ]);
+  i1.main();
 }

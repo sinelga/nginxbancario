@@ -12,7 +12,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:barback/barback.dart';
 import 'package:path/path.dart' as path;
 import 'package:stack_trace/stack_trace.dart';
@@ -42,8 +41,22 @@ class BarbackOptions {
   /** Directory where to generate code, if any. */
   final String outDir;
 
+  /**
+   * Whether to print error messages using a json-format that tools, such as the
+   * Dart Editor, can process.
+   */
+  final bool machineFormat;
+
+  /**
+   * Whether to follow symlinks when listing directories. By default this is
+   * false because directories have symlinks for the packages directory created
+   * by pub, but it can be turned on for custom uses of this library.
+   */
+  final bool followLinks;
+
   BarbackOptions(this.phases, this.outDir, {currentPackage, packageDirs,
-      this.transformTests: false, this.transformPolymerDependencies: false})
+      this.transformTests: false, this.transformPolymerDependencies: false,
+      this.machineFormat: false, this.followLinks: false})
       : currentPackage = (currentPackage != null
           ? currentPackage : readCurrentPackageFromPubspec()),
         packageDirs = (packageDirs != null
@@ -59,14 +72,15 @@ class BarbackOptions {
 Future<AssetSet> runBarback(BarbackOptions options) {
   var barback = new Barback(new _PolymerPackageProvider(options.packageDirs));
   _initBarback(barback, options);
-  _attachListeners(barback);
+  _attachListeners(barback, options);
   if (options.outDir == null) return barback.getAllAssets();
   return _emitAllFiles(barback, options);
 }
 
 /** Extract the current package from the pubspec.yaml file. */
-String readCurrentPackageFromPubspec() {
-  var pubspec = new File('pubspec.yaml');
+String readCurrentPackageFromPubspec([String dir]) {
+  var pubspec = new File(
+      dir == null ? 'pubspec.yaml' : path.join(dir, 'pubspec.yaml'));
   if (!pubspec.existsSync()) {
     print('error: pubspec.yaml file not found, please run this script from '
         'your package root directory.');
@@ -79,10 +93,10 @@ String readCurrentPackageFromPubspec() {
  * Extract a mapping between package names and the path in the file system where
  * to find the sources of such package. This map will contain an entry for the
  * current package and everything it depends on (extracted via `pub
- * list-pacakge-dirs`).
+ * list-package-dirs`).
  */
 Map<String, String> _readPackageDirsFromPub(String currentPackage) {
-  var dartExec = new Options().executable;
+  var dartExec = Platform.executable;
   // If dartExec == dart, then dart and pub are in standard PATH.
   var sdkDir = dartExec == 'dart' ? '' : path.dirname(dartExec);
   var pub = path.join(sdkDir, Platform.isWindows ? 'pub.bat' : 'pub');
@@ -103,11 +117,11 @@ Map<String, String> _readPackageDirsFromPub(String currentPackage) {
 // TODO(sigmund): consider computing this list by recursively parsing
 // pubspec.yaml files in the `Options.packageDirs`.
 final Set<String> _polymerPackageDependencies = [
-    'analyzer_experimental', 'args', 'barback', 'browser', 'csslib',
-    'custom_element', 'fancy_syntax', 'html5lib', 'html_import', 'js',
-    'logging', 'mdv', 'meta', 'mutation_observer', 'observe', 'path', 'polymer',
+    'analyzer', 'args', 'barback', 'browser', 'custom_element', 'html5lib',
+    'html_import', 'js', 'logging', 'mutation_observer', 'observe', 'path'
     'polymer_expressions', 'serialization', 'shadow_dom', 'source_maps',
-    'stack_trace', 'unittest', 'unmodifiable_collection', 'yaml'].toSet();
+    'stack_trace', 'template_binding', 'unittest', 'unmodifiable_collection',
+    'yaml'].toSet();
 
 /** Return the relative path of each file under [subDir] in [package]. */
 Iterable<String> _listPackageDir(String package, String subDir,
@@ -116,7 +130,7 @@ Iterable<String> _listPackageDir(String package, String subDir,
   if (packageDir == null) return const [];
   var dir = new Directory(path.join(packageDir, subDir));
   if (!dir.existsSync()) return const [];
-  return dir.listSync(recursive: true, followLinks: false)
+  return dir.listSync(recursive: true, followLinks: options.followLinks)
       .where((f) => f is File)
       .map((f) => path.relative(f.path, from: packageDir));
 }
@@ -149,7 +163,9 @@ void _initBarback(Barback barback, BarbackOptions options) {
   }
 
   for (var package in options.packageDirs.keys) {
-    // There is nothing to do in the 'polymer' package and its dependencies.
+    // There is nothing to do in the polymer package dependencies.
+    // However: in Polymer package *itself*, we need to replace Observable
+    // with ChangeNotifier.
     if (!options.transformPolymerDependencies &&
         _polymerPackageDependencies.contains(package)) continue;
     barback.updateTransformers(package, options.phases);
@@ -167,10 +183,11 @@ void _initBarback(Barback barback, BarbackOptions options) {
 }
 
 /** Attach error listeners on [barback] so we can report errors. */
-void _attachListeners(Barback barback) {
+void _attachListeners(Barback barback, BarbackOptions options) {
   // Listen for errors and results
   barback.errors.listen((e) {
-    var trace = getAttachedStackTrace(e);
+    var trace = null;
+    if (e is Error) trace = e.stackTrace;
     if (trace != null) {
       print(Trace.format(trace));
     }
@@ -182,6 +199,14 @@ void _attachListeners(Barback barback) {
     if (!result.succeeded) {
       print("build failed with errors: ${result.errors}");
       exit(1);
+    }
+  });
+
+  barback.log.listen((entry) {
+    if (options.machineFormat) {
+      print(_jsonFormatter(entry));
+    } else {
+      print(_consoleFormatter(entry));
     }
   });
 }
@@ -208,10 +233,11 @@ Future _emitTransformedFiles(AssetSet assets, BarbackOptions options) {
   var currentPackage = options.currentPackage;
   var transformTests = options.transformTests;
   var outPackages = path.join(options.outDir, 'packages');
-  for (var asset in assets) {
+
+  return Future.forEach(assets, (asset) {
     var id = asset.id;
     var dir = _firstDir(id.path);
-    if (dir == null) continue;
+    if (dir == null) return null;
 
     var filepath;
     if (dir == 'lib') {
@@ -224,12 +250,11 @@ Future _emitTransformedFiles(AssetSet assets, BarbackOptions options) {
       filepath = path.join(options.outDir, _toSystemPath(id.path));
     } else {
       // TODO(sigmund): do something about other assets?
-      continue;
+      return null;
     }
 
-    futures.add(_writeAsset(filepath, asset));
-  }
-  return Future.wait(futures);
+    return _writeAsset(filepath, asset);
+  });
 }
 
 /**
@@ -269,16 +294,15 @@ Future _emitPackagesDir(BarbackOptions options) {
   _ensureDir(outPackages);
 
   // Copy all the files we didn't process
-  var futures = [];
   var dirs = options.packageDirs;
-  for (var package in _polymerPackageDependencies) {
-    for (var relpath in _listPackageDir(package, 'lib', options)) {
+
+  return Future.forEach(_polymerPackageDependencies, (package) {
+    return Future.forEach(_listPackageDir(package, 'lib', options), (relpath) {
       var inpath = path.join(dirs[package], relpath);
       var outpath = path.join(outPackages, package, relpath.substring(4));
-      futures.add(_copyFile(inpath, outpath));
-    }
-  }
-  return Future.wait(futures);
+      return _copyFile(inpath, outpath);
+    });
+  });
 }
 
 /** Ensure [dirpath] exists. */
@@ -299,14 +323,62 @@ String _firstDir(String url) {
 /** Copy a file from [inpath] to [outpath]. */
 Future _copyFile(String inpath, String outpath) {
   _ensureDir(path.dirname(outpath));
-  var writer = new File(outpath).openWrite();
-  return writer.addStream(new File(inpath).openRead())
-      .then((_) => writer.close());
+  return new File(inpath).openRead().pipe(new File(outpath).openWrite());
 }
 
 /** Write contents of an [asset] into a file at [filepath]. */
 Future _writeAsset(String filepath, Asset asset) {
   _ensureDir(path.dirname(filepath));
-  var writer = new File(filepath).openWrite();
-  return writer.addStream(asset.read()).then((_) => writer.close());
+  return asset.read().pipe(new File(filepath).openWrite());
 }
+
+String _kindFromEntry(LogEntry entry) {
+  var level = entry.level;
+  return level == LogLevel.ERROR ? 'error'
+      : (level == LogLevel.WARNING ? 'warning' : 'info');
+}
+
+/**
+ * Formatter that generates messages using a format that can be parsed
+ * by tools, such as the Dart Editor, for reporting error messages.
+ */
+String _jsonFormatter(LogEntry entry) {
+  var kind = _kindFromEntry(entry);
+  var span = entry.span;
+  return JSON.encode((span == null)
+      ? [{'method': kind, 'params': {'message': entry.message}}]
+      : [{'method': kind,
+          'params': {
+            'file': span.sourceUrl,
+            'message': entry.message,
+            'line': span.start.line + 1,
+            'charStart': span.start.offset,
+            'charEnd': span.end.offset,
+          }}]);
+}
+
+/**
+ * Formatter that generates messages that are easy to read on the console (used
+ * by default).
+ */
+String _consoleFormatter(LogEntry entry) {
+  var kind = _kindFromEntry(entry);
+  var useColors = stdioType(stdout) == StdioType.TERMINAL;
+  var levelColor = (kind == 'error') ? _RED_COLOR : _MAGENTA_COLOR;
+  var output = new StringBuffer();
+  if (useColors) output.write(levelColor);
+  output..write(kind)..write(' ');
+  if (useColors) output.write(_NO_COLOR);
+  if (entry.span == null) {
+    output.write(entry.message);
+  } else {
+    output.write(entry.span.getLocationMessage(entry.message,
+          useColors: useColors,
+          color: levelColor));
+  }
+  return output.toString();
+}
+
+const String _RED_COLOR = '\u001b[31m';
+const String _MAGENTA_COLOR = '\u001b[35m';
+const String _NO_COLOR = '\u001b[0m';

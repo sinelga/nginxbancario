@@ -19,98 +19,18 @@ library custom_element;
 
 import 'dart:async';
 import 'dart:html';
-import 'package:mdv/mdv.dart' as mdv;
-import 'package:meta/meta.dart';
 import 'src/custom_tag_name.dart';
 
-// TODO(jmesserly): replace with a real custom element polyfill.
-// This is just something temporary.
 /**
- * *Warning*: this implementation is a work in progress. It only implements
- * the specification partially.
+ * *Deprecated* -- do not use. Extend [HtmlElement] and use
+ * [document.register] instead. If running on a browser without native
+ * document.register, you can add the polyfill script to your page:
  *
- * Registers a custom HTML element with [localName] and the associated
- * constructor. This will ensure the element is detected and
+ *     <script src="packages/custom_element/custom-elements.debug.js"></script>
  *
- * See the specification at:
- * <https://dvcs.w3.org/hg/webcomponents/raw-file/tip/spec/custom/index.html>
+ * You can also use "custom-elements.min.js" for the minified version.
  */
-void registerCustomElement(String localName, CustomElement create()) {
-  if (_customElements == null) {
-    _customElements = {};
-    mdv.instanceCreated.add(initCustomElements);
-    // TODO(jmesserly): use MutationObserver to watch for inserts?
-  }
-
-  if (!isCustomTag(localName)) {
-    throw new ArgumentError('$localName is not a valid custom element name, '
-        'it should have at least one dash and not be a reserved name.');
-  }
-
-  if (_customElements.containsKey(localName)) {
-    throw new ArgumentError('custom element $localName already registered.');
-  }
-
-  // TODO(jmesserly): validate this is a valid tag name, not a selector.
-  _customElements[localName] = create;
-
-  // Initialize elements already on the page.
-  for (var query in [localName, '[is=$localName]']) {
-    for (var element in document.queryAll(query)) {
-      _initCustomElement(element, create);
-    }
-  }
-}
-
-/**
- * Creates a new element and returns it. If the [localName] has been registered
- * with [registerCustomElement], it will create the custom element.
- *
- * This is similar to `new Element.tag` in Dart and `document.createElement`
- * in JavaScript.
- *
- * *Warning*: this API is temporary until [dart:html] supports custom elements.
- */
-Element createElement(String localName) =>
-    initCustomElements(new Element.tag(localName));
-
-/**
- * Similar to `new Element.html`, but automatically creates registed custom
- * elements.
- * *Warning*: this API is temporary until [dart:html] supports custom elements.
- */
-Element createElementFromHtml(String html) =>
-    initCustomElements(new Element.html(html));
-
-/**
- * Initialize any registered custom elements recursively in the [node] tree.
- * For convenience this returns the [node] instance.
- *
- * *Warning*: this API is temporary until [dart:html] supports custom elements.
- */
-Node initCustomElements(Node node) {
-  for (var c = node.firstChild; c != null; c = c.nextNode) {
-    initCustomElements(c);
-  }
-  if (node is Element) {
-    var ctor = _customElements[(node as Element).localName];
-    if (ctor == null) {
-      var attr = (node as Element).attributes['is'];
-      if (attr != null) ctor = _customElements[attr];
-    }
-    if (ctor != null) _initCustomElement(node, ctor);
-  }
-  return node;
-}
-
-/**
- * The base class for all Dart web components. In addition to the [Element]
- * interface, it also provides lifecycle methods:
- * - [created]
- * - [inserted]
- * - [attributeChanged]
- * - [removed]
- */
+// This is only used by Dart Web UI.
 class CustomElement implements Element {
   /** The web component element wrapped by this class. */
   Element _host;
@@ -171,6 +91,9 @@ class CustomElement implements Element {
    * Note that [root] will be a [ShadowRoot] if the browser supports Shadow DOM.
    */
   void created() {}
+  // Added for analyzer warnings
+  @deprecated
+  void createdCallback() {}
 
   /** Invoked when this component gets inserted in the DOM tree. */
   void inserted() {}
@@ -182,31 +105,9 @@ class CustomElement implements Element {
   @deprecated
   void leftView() {}
 
-  // TODO(jmesserly): how do we implement this efficiently?
-  // See https://github.com/dart-lang/web-ui/issues/37
   /** Invoked when any attribute of the component is modified. */
-  void attributeChanged(String name, String oldValue, String newValue) {}
-
-  get model => host.model;
-
-  void set model(newModel) {
-    host.model = newModel;
-  }
-
-  get templateInstance => host.templateInstance;
-  get isTemplate => host.isTemplate;
-  get ref => host.ref;
-  get content => host.content;
-  DocumentFragment createInstance(model, [BindingDelegate delegate]) =>
-      host.createInstance(model, delegate);
-  createBinding(String name, model, String path) =>
-      host.createBinding(name, model, path);
-  bind(String name, model, String path) => host.bind(name, model, path);
-  void unbind(String name) => host.unbind(name);
-  void unbindAll() => host.unbindAll();
-  get bindings => host.bindings;
-  BindingDelegate get bindingDelegate => host.bindingDelegate;
-  set bindingDelegate(BindingDelegate value) { host.bindingDelegate = value; }
+  void attributeChanged(String name, String oldValue, String newValue) =>
+      host.attributeChanged(name, oldValue, newValue);
 
   // TODO(efortuna): Update these when we decide what to do with these
   // properties.
@@ -254,7 +155,7 @@ class CustomElement implements Element {
 
   String get nodeName => host.nodeName;
 
-  Document get document => host.document;
+  Document get ownerDocument => host.ownerDocument;
 
   Node get previousNode => host.previousNode;
 
@@ -316,10 +217,7 @@ class CustomElement implements Element {
 
   String get nodeValue => host.nodeValue;
 
-  @deprecated
-  // TODO(sigmund): restore the old return type and call host.on when
-  // dartbug.com/8131 is fixed.
-  dynamic get on { throw new UnsupportedError('on is deprecated'); }
+  Events get on => host.on;
 
   String get contentEditable => host.contentEditable;
   set contentEditable(String v) { host.contentEditable = v; }
@@ -336,12 +234,6 @@ class CustomElement implements Element {
   String get id => host.id;
   set id(String v) { host.id = v; }
 
-  String get innerHTML => host.innerHtml;
-
-  void set innerHTML(String v) {
-    host.innerHtml = v;
-  }
-
   String get innerHtml => host.innerHtml;
   void set innerHtml(String v) {
     host.innerHtml = v;
@@ -350,10 +242,6 @@ class CustomElement implements Element {
   void setInnerHtml(String html,
     {NodeValidator validator, NodeTreeSanitizer treeSanitizer}) {
     host.setInnerHtml(html, validator: validator, treeSanitizer: treeSanitizer);
-  }
-
-  void set unsafeInnerHtml(String html) {
-    host.unsafeInnerHtml = html;
   }
 
   DocumentFragment createFragment(String html,
@@ -458,9 +346,16 @@ class CustomElement implements Element {
 
   void requestPointerLock() { host.requestPointerLock(); }
 
-  Element query(String selectors) => host.query(selectors);
+  Element querySelector(String selectors) => host.querySelector(selectors);
 
-  ElementList queryAll(String selectors) => host.queryAll(selectors);
+  ElementList querySelectorAll(String selectors) =>
+      host.querySelectorAll(selectors);
+
+  @deprecated
+  Element query(String selectors) => host.querySelector(selectors);
+
+  @deprecated
+  ElementList queryAll(String selectors) => host.querySelectorAll(selectors);
 
   String get className => host.className;
   set className(String value) { host.className = value; }
@@ -477,7 +372,7 @@ class CustomElement implements Element {
   @deprecated
   int get clientWidth => client.width;
 
-  Rect get client => host.client;
+  Rectangle get client => host.client;
 
   @deprecated
   int get offsetHeight => offset.height;
@@ -491,7 +386,7 @@ class CustomElement implements Element {
   @deprecated
   int get offsetWidth => offset.width;
 
-  Rect get offset => host.offset;
+  Rectangle get offset => host.offset;
 
   int get scrollHeight => host.scrollHeight;
 
@@ -505,9 +400,9 @@ class CustomElement implements Element {
 
   int get scrollWidth => host.scrollWidth;
 
-  Rect getBoundingClientRect() => host.getBoundingClientRect();
+  Rectangle getBoundingClientRect() => host.getBoundingClientRect();
 
-  List<Rect> getClientRects() => host.getClientRects();
+  List<Rectangle> getClientRects() => host.getClientRects();
 
   List<Node> getElementsByClassName(String name) =>
       host.getElementsByClassName(name);
@@ -522,16 +417,16 @@ class CustomElement implements Element {
 
   int get nodeType => host.nodeType;
 
-  void $dom_addEventListener(String type, EventListener listener,
-                             [bool useCapture]) {
-    host.$dom_addEventListener(type, listener, useCapture);
+  void addEventListener(String type, EventListener listener,
+      [bool useCapture]) {
+    host.addEventListener(type, listener, useCapture);
   }
 
   bool dispatchEvent(Event event) => host.dispatchEvent(event);
 
-  void $dom_removeEventListener(String type, EventListener listener,
-                                [bool useCapture]) {
-    host.$dom_removeEventListener(type, listener, useCapture);
+  void removeEventListener(String type, EventListener listener,
+      [bool useCapture]) {
+    host.removeEventListener(type, listener, useCapture);
   }
 
   get xtag => host.xtag;
@@ -605,48 +500,4 @@ class CustomElement implements Element {
   Stream<WheelEvent> get onMouseWheel {
     throw new UnsupportedError('onMouseWheel is not supported');
   }
-}
-
-
-Map<String, Function> _customElements;
-
-void _initCustomElement(Element node, CustomElement ctor()) {
-  CustomElement element = ctor();
-  element.host = node;
-
-  // TODO(jmesserly): replace lifecycle stuff with a proper polyfill.
-  element.created();
-
-  _registerLifecycleInsert(element);
-}
-
-void _registerLifecycleInsert(CustomElement element) {
-  runAsync(() {
-    // TODO(jmesserly): bottom up or top down insert?
-    var node = element.host;
-
-    // TODO(jmesserly): need a better check to see if the node has been removed.
-    if (node.parentNode == null) return;
-
-    _registerLifecycleRemove(element);
-    element.inserted();
-  });
-}
-
-void _registerLifecycleRemove(CustomElement element) {
-  // TODO(jmesserly): need fallback or polyfill for MutationObserver.
-  if (!MutationObserver.supported) return;
-
-  new MutationObserver((records, observer) {
-    var node = element.host;
-    for (var record in records) {
-      for (var removed in record.removedNodes) {
-        if (identical(node, removed)) {
-          observer.disconnect();
-          element.removed();
-          return;
-        }
-      }
-    }
-  }).observe(element.parentNode, childList: true);
 }

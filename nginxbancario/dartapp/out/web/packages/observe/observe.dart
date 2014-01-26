@@ -13,7 +13,7 @@
  * You can provide an observable object in two ways. The simplest way is to
  * use dirty checking to discover changes automatically:
  *
- *     class Monster extends Unit with ObservableMixin {
+ *     class Monster extends Unit with Observable {
  *       @observable int health = 100;
  *
  *       void damage(int amount) {
@@ -41,11 +41,11 @@
  * manually. This avoids the potentially expensive [Observable.dirtyCheck]
  * operation, but requires more work in the object:
  *
- *     class Monster extends Unit with ChangeNotifierMixin {
+ *     class Monster extends Unit with ChangeNotifier {
  *       int _health = 100;
- *       get health => _health;
- *       set health(val) {
- *         _health = notifyPropertyChange(const Symbol('health'), _health, val);
+ *       @reflectable get health => _health;
+ *       @reflectable set health(val) {
+ *         _health = notifyPropertyChange(#health, _health, val);
  *       }
  *
  *       void damage(int amount) {
@@ -67,29 +67,26 @@
  *       print('done!');
  *     }
  *
+ * *Note*: it is good practice to keep `@reflectable` annotation on
+ * getters/setters so they are accessible via reflection. This will preserve
+ * them from tree-shaking. You can also put this annotation on the class and it
+ * preserve all of its members for reflection.
+ *
  * [Tools](https://www.dartlang.org/polymer-dart/) exist to convert the first
  * form into the second form automatically, to get the best of both worlds.
  */
 library observe;
 
-import 'dart:async';
-import 'dart:collection';
-import 'dart:mirrors';
-
-// Note: this is an internal library so we can import it from tests.
-// TODO(jmesserly): ideally we could import this with a prefix, but it caused
-// strange problems on the VM when I tested out the dirty-checking example
-// above.
-import 'src/dirty_check.dart';
-
-part 'src/bind_property.dart';
-part 'src/change_notifier.dart';
-part 'src/change_record.dart';
-part 'src/compound_binding.dart';
-part 'src/list_path_observer.dart';
-part 'src/observable.dart';
-part 'src/observable_box.dart';
-part 'src/observable_list.dart';
-part 'src/observable_map.dart';
-part 'src/path_observer.dart';
-part 'src/to_observable.dart';
+export 'src/bind_property.dart';
+export 'src/change_notifier.dart';
+export 'src/change_record.dart';
+export 'src/compound_path_observer.dart';
+export 'src/list_path_observer.dart';
+export 'src/list_diff.dart' show ListChangeRecord;
+export 'src/metadata.dart';
+export 'src/observable.dart' hide notifyPropertyChangeHelper, objectType;
+export 'src/observable_box.dart';
+export 'src/observable_list.dart';
+export 'src/observable_map.dart';
+export 'src/path_observer.dart';
+export 'src/to_observable.dart';

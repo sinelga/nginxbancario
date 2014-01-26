@@ -2,9 +2,10 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-part of observe;
+library observe.src.list_path_observer;
 
-const _VALUE = const Symbol('value');
+import 'dart:async';
+import 'package:observe/observe.dart';
 
 // Inspired by ArrayReduction at:
 // https://raw.github.com/rafaelw/ChangeSummary/master/util/array_reduction.js
@@ -13,7 +14,7 @@ const _VALUE = const Symbol('value');
 /**
  * Observes a path starting from each item in the list.
  */
-class ListPathObserver<E, P> extends ChangeNotifierBase {
+class ListPathObserver<E, P> extends ChangeNotifier {
   final ObservableList<E> list;
   final String _itemPath;
   final List<PathObserver> _observers = <PathObserver>[];
@@ -25,11 +26,10 @@ class ListPathObserver<E, P> extends ChangeNotifierBase {
   ListPathObserver(this.list, String path)
       : _itemPath = path {
 
-    _sub = list.changes.listen((records) {
+    // TODO(jmesserly): delay observation until we are observed.
+    _sub = list.listChanges.listen((records) {
       for (var record in records) {
-        if (record is ListChangeRecord) {
-          _observeItems(record.addedCount - record.removedCount);
-        }
+        _observeItems(record.addedCount - record.removed.length);
       }
       _scheduleReduce(null);
     });
@@ -38,7 +38,7 @@ class ListPathObserver<E, P> extends ChangeNotifierBase {
     _reduce();
   }
 
-  Iterable<P> get value => _value;
+  @reflectable Iterable<P> get value => _value;
 
   void dispose() {
     if (_sub != null) _sub.cancel();
@@ -48,14 +48,14 @@ class ListPathObserver<E, P> extends ChangeNotifierBase {
 
   void _reduce() {
     _scheduled = false;
-    _value = _observers.map((o) => o.value);
-    notifyChange(new PropertyChangeRecord(_VALUE));
+    var newValue = _observers.map((o) => o.value);
+    _value = notifyPropertyChange(#value, _value, newValue);
   }
 
   void _scheduleReduce(_) {
     if (_scheduled) return;
     _scheduled = true;
-    runAsync(_reduce);
+    scheduleMicrotask(_reduce);
   }
 
   void _observeItems(int lengthAdjust) {

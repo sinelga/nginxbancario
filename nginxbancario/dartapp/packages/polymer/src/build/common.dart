@@ -28,7 +28,7 @@ Document _parseHtml(String contents, String sourcePath, TransformLogger logger,
   // So just print them as warnings.
   for (var e in parser.errors) {
     if (checkDocType || e.errorCode != 'expected-doctype-but-got-start-tag') {
-      logger.warning(e.message, e.span);
+      logger.warning(e.message, span: e.span);
     }
   }
   return document;
@@ -36,10 +36,40 @@ Document _parseHtml(String contents, String sourcePath, TransformLogger logger,
 
 /** Additional options used by polymer transformers */
 class TransformOptions {
-  String currentPackage;
-  List<String> entryPoints;
+  /**
+   * List of entrypoints paths. The paths are relative to the package root and
+   * are represented using posix style, which matches the representation used in
+   * asset ids in barback. If null, anything under 'web/' or 'test/' is
+   * considered an entry point.
+   */
+  final List<String> entryPoints;
 
-  TransformOptions([this.currentPackage, entryPoints])
+  /**
+   * True to enable Content Security Policy.
+   * This means the HTML page will include *.dart.precompiled.js
+   *
+   * This flag has no effect unless [directlyIncludeJS] is enabled.
+   */
+  final bool contentSecurityPolicy;
+
+  /**
+   * True to include the compiled JavaScript directly from the HTML page.
+   * If enabled this will remove "packages/browser/dart.js" and replace
+   * `type="application/dart"` scripts with equivalent *.dart.js files.
+   *
+   * If [contentSecurityPolicy] enabled, this will reference files
+   * named *.dart.precompiled.js.
+   */
+  final bool directlyIncludeJS;
+
+  /**
+   * Run transformers to create a releasable app. For example, include the
+   * minified versions of the polyfills rather than the debug versions.
+   */
+  final bool releaseMode;
+
+  TransformOptions({entryPoints, this.contentSecurityPolicy: false,
+      this.directlyIncludeJS: true, this.releaseMode: true})
       : entryPoints = entryPoints == null ? null
           : entryPoints.map(_systemToAssetPath).toList();
 
@@ -48,11 +78,11 @@ class TransformOptions {
     if (id.extension != '.html') return false;
 
     // Note: [id.path] is a relative path from the root of a package.
-    if (currentPackage == null || entryPoints == null) {
+    if (entryPoints == null) {
       return id.path.startsWith('web/') || id.path.startsWith('test/');
     }
 
-    return id.package == currentPackage && entryPoints.contains(id.path);
+    return entryPoints.contains(id.path);
   }
 }
 
@@ -71,16 +101,19 @@ abstract class PolymerTransformer {
 
   Future<Document> readAsHtml(AssetId id, Transform transform) {
     var primaryId = transform.primaryInput.id;
-    var url = (id.package == primaryId.package) ? id.path
+    bool samePackage = id.package == primaryId.package;
+    var url = samePackage ? id.path
         : assetUrlFor(id, primaryId, transform.logger, allowAssetUrl: true);
     return transform.readInputAsString(id).then((content) {
       return _parseHtml(content, url, transform.logger,
-        checkDocType: options.isHtmlEntryPoint(id));
+        checkDocType: samePackage && options.isHtmlEntryPoint(id));
     });
   }
 
   Future<bool> assetExists(AssetId id, Transform transform) =>
       transform.getInput(id).then((_) => true).catchError((_) => false);
+
+  String toString() => 'polymer ($runtimeType)';
 }
 
 /** Create an [AssetId] for a [url] seen in the [source] asset. */
@@ -90,36 +123,49 @@ AssetId resolve(AssetId source, String url, TransformLogger logger, Span span) {
   var uri = Uri.parse(url);
   var urlBuilder = path.url;
   if (uri.host != '' || uri.scheme != '' || urlBuilder.isAbsolute(url)) {
-    logger.error('absolute paths not allowed: "$url"', span);
+    logger.error('absolute paths not allowed: "$url"', span: span);
     return null;
   }
 
-  var package;
-  var targetPath;
   var segments = urlBuilder.split(url);
-  if (segments[0] == 'packages') {
-    if (segments.length < 3) {
-      logger.error("incomplete packages/ path. It should have at least 3 "
-          "segments packages/name/path-from-name's-lib-dir", span);
-      return null;
-    }
-    package = segments[1];
-    targetPath = urlBuilder.join('lib',
-        urlBuilder.joinAll(segments.sublist(2)));
-  } else if (segments[0] == 'assets') {
-    if (segments.length < 3) {
-      logger.error("incomplete assets/ path. It should have at least 3 "
-          "segments assets/name/path-from-name's-asset-dir", span);
-    }
-    package = segments[1];
-    targetPath = urlBuilder.join('asset',
-        urlBuilder.joinAll(segments.sublist(2)));
-  } else {
-    package = source.package;
-    targetPath = urlBuilder.normalize(
-        urlBuilder.join(urlBuilder.dirname(source.path), url));
+  var prefix = segments[0];
+  var entryFolder = !source.path.startsWith('lib/') &&
+      !source.path.startsWith('asset/');
+
+  // URLs of the form "packages/foo/bar" seen under entry folders (like web/,
+  // test/, example/, etc) are resolved as an asset in another package.
+  if (entryFolder && (prefix == 'packages' || prefix == 'assets')) {
+    return _extractOtherPackageId(0, segments, logger, span);
   }
-  return new AssetId(package, targetPath);
+
+  var targetPath = urlBuilder.normalize(
+      urlBuilder.join(urlBuilder.dirname(source.path), url));
+
+  // Relative URLs of the form "../../packages/foo/bar" in an asset under lib/
+  // or asset/ are also resolved as an asset in another package.
+  segments = urlBuilder.split(targetPath);
+  if (!entryFolder && segments.length > 1 && segments[0] == '..' &&
+      (segments[1] == 'packages' || segments[1] == 'assets')) {
+    return _extractOtherPackageId(1, segments, logger, span);
+  }
+
+  // Otherwise, resolve as a path in the same package.
+  return new AssetId(source.package, targetPath);
+}
+
+AssetId _extractOtherPackageId(int index, List segments,
+    TransformLogger logger, Span span) {
+  if (index >= segments.length) return null;
+  var prefix = segments[index];
+  if (prefix != 'packages' && prefix != 'assets') return null;
+  var folder = prefix == 'packages' ? 'lib' : 'asset';
+  if (segments.length < index + 3) {
+    logger.error("incomplete $prefix/ path. It should have at least 3 "
+        "segments $prefix/name/path-from-name's-$folder-dir", span: span);
+    return null;
+  }
+  return new AssetId(segments[index + 1],
+      path.url.join(folder, path.url.joinAll(segments.sublist(index + 2))));
 }
 
 /**

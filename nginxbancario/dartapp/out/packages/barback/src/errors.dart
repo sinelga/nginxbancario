@@ -4,8 +4,6 @@
 
 library barback.errors;
 
-import 'dart:async';
-
 import 'package:stack_trace/stack_trace.dart';
 
 import 'asset_id.dart';
@@ -115,17 +113,21 @@ class InvalidOutputException implements BarbackException {
 abstract class _WrappedException implements BarbackException {
   /// The wrapped exception.
   final error;
+  final Chain stackTrace;
 
-  _WrappedException(this.error);
+  _WrappedException(this.error, StackTrace stackTrace)
+      : this.stackTrace = stackTrace == null ? null :
+            new Chain.forTrace(stackTrace);
 
   String get _message;
 
   String toString() {
     var result = "$_message: $error";
 
-    var stack = getAttachedStackTrace(error);
+    var stack = stackTrace;
+    if (stack == null && error is Error) stack = error.stackTrace;
     if (stack != null) {
-      result = "$result\n${new Trace.from(stack).terse}";
+      result = "$result\n${stackTrace.terse}";
     }
 
     return result;
@@ -137,8 +139,8 @@ class TransformerException extends _WrappedException {
   /// The transform that threw the exception.
   final TransformInfo transform;
 
-  TransformerException(this.transform, error)
-      : super(error);
+  TransformerException(this.transform, error, StackTrace stackTrace)
+      : super(error, stackTrace);
 
   String get _message => "Transform $transform threw error";
 }
@@ -150,8 +152,8 @@ class TransformerException extends _WrappedException {
 class AssetLoadException extends _WrappedException {
   final AssetId id;
 
-  AssetLoadException(this.id, error)
-      : super(error);
+  AssetLoadException(this.id, error, [StackTrace stackTrace])
+      : super(error, stackTrace);
 
   String get _message => "Failed to load source asset $id";
 }

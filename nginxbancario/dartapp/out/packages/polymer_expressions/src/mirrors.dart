@@ -2,8 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library polymer_expressions.mirrors;
+library polymer_expressions.src.mirrors;
 
+import 'package:observe/observe.dart' show Reflectable, ObservableProperty;
+
+@MirrorsUsed(metaTargets: const [Reflectable, ObservableProperty],
+    override: 'polymer_expressions.src.mirrors')
 import 'dart:mirrors';
 
 /**
@@ -14,8 +18,8 @@ import 'dart:mirrors';
  * noSuchMethod().
  */
 Mirror getMemberMirror(ClassMirror classMirror, Symbol name) {
-  if (classMirror.members.containsKey(name)) {
-    return classMirror.members[name];
+  if (classMirror.declarations.containsKey(name)) {
+    return classMirror.declarations[name];
   }
   if (hasSuperclass(classMirror)) {
     var mirror = getMemberMirror(classMirror.superclass, name);
@@ -38,5 +42,5 @@ Mirror getMemberMirror(ClassMirror classMirror, Symbol name) {
 bool hasSuperclass(ClassMirror classMirror) {
   var superclass = classMirror.superclass;
   return (superclass != null) &&
-      (superclass.qualifiedName != const Symbol('dart.core.Object'));
+      (superclass.qualifiedName != #dart.core.Object);
 }
