@@ -2723,3 +2723,8 @@ build.dart --machine --changed=web/dartapp.html
 Done! All files written to "out"
 build.dart finished [2725 ms]
 
+---
+build.dart --machine --removed=deploy/dartapp.css --removed=deploy/dartapp.dart --removed=deploy/dartapp.dart.j...
+Done! All files written to "out"
+build.dart finished [2732 ms]
+
