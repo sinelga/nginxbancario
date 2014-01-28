@@ -9,10 +9,6 @@ import "package:jsonp/jsonp.dart" as jsonp;
 
 List<RssFeedItem> rssFeedItemArr;
 main() {
- 
-//  RssFeed rssFeed = new RssFeed();
-//  List fruits = ['apples', 'oranges', 'pears'];
-//  query('#tmpl').model = fruits;
   
   Future<js.Proxy> result = jsonp.fetch(
       uri: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%20%3D%20%22http%3A%2F%2Fquotidianohome.feedsportal.com%2Fc%2F33327%2Ff%2F565662%2Findex.rss%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=?"
@@ -41,10 +37,7 @@ main() {
 //      count++;
     }
        
-    js.release(proxy);
-    print(rssFeedItemArr.length);
-//    rssFeed.setUp(rssFeedItemArr);
-//    query('#rss').model = rssFeedItemArr;
+ 
     
     query('#rss').model = rssFeedItemArr;
     

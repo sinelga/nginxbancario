@@ -1,19 +1,26 @@
 import 'package:polymer/polymer.dart';
 //import 'dart:html';
-import 'domains.dart';
-import 'dart:async';
-import "package:js/js.dart" as js;
-import "package:jsonp/jsonp.dart" as jsonp;
+//import 'domains.dart';
+//import 'dart:async';
+//import "package:js/js.dart" as js;
+//import "package:jsonp/jsonp.dart" as jsonp;
 
 //@observable 
 //List<RssFeedItem> rssFeedItemArr;
 
 
 @CustomTag('rss-feed')
-class RssFeed extends PolymerElement with ObservableMixin{
+class RssFeed extends PolymerElement {
+   
+  bool get applyAuthorStyles => true;
+  
+  RssFeed .created() : super.created() {
     
+    
+  }
+  
 //  @observable List count;
-  @observable List rssfeedarr;
+//  @observable List rssfeedarr;
 //  @observable bool start=false;
 //  @observable int count = 0;
 //  List<RssFeedItem> rssFeedItemArr = new List<RssFeedItem>();
@@ -24,7 +31,7 @@ class RssFeed extends PolymerElement with ObservableMixin{
 //    count++;
 //  }
   
-  void setUp(List<RssFeedItem> rssFeedItemArr) {
+//  void setUp(List<RssFeedItem> rssFeedItemArr) {
     
 //    count = rssFeedItemArr;
 //    print(count.length);
@@ -56,7 +63,7 @@ class RssFeed extends PolymerElement with ObservableMixin{
 //  });
 //  
 //  
-  }
+  
 
-  bool get applyAuthorStyles => true;
+ 
 }

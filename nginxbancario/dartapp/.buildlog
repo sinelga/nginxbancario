@@ -2728,3 +2728,88 @@ build.dart --machine --removed=deploy/dartapp.css --removed=deploy/dartapp.dart 
 Done! All files written to "out"
 build.dart finished [2732 ms]
 
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1302 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":593,"charEnd":599}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":602,"charEnd":613}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":593,"charEnd":599}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":602,"charEnd":613}}]
+build.dart finished [1314 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1259 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1251 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1234 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1266 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1266 ms]
+
+---
+build.dart --machine --removed=web/dartapp.dart.js --removed=web/dartapp.dart.js.deps --removed=web/dartapp.dar...
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1254 ms]
+
+---
+build.dart --machine --removed=web/precompiled.js
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1218 ms]
+
+---
+build.dart --machine --full
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1396 ms]
+
+---
+build.dart --machine --changed=build/dartapp.css --changed=build/dartapp.dart.js --changed=build/dartapp.dart.j...
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1274 ms]
+
