@@ -1,69 +1,85 @@
 import 'package:polymer/polymer.dart';
-//import 'dart:html';
-//import 'domains.dart';
-//import 'dart:async';
-//import "package:js/js.dart" as js;
-//import "package:jsonp/jsonp.dart" as jsonp;
-
-//@observable 
-//List<RssFeedItem> rssFeedItemArr;
+import 'dart:html';
+import 'domains.dart';
+import 'dart:async';
+import "package:js/js.dart" as js;
+import "package:jsonp/jsonp.dart" as jsonp;
+import 'itembox.dart';
+//import 'package:html5lib/parser.dart' show parse;
+//import 'package:html5lib/dom.dart';
 
 
 @CustomTag('rss-feed')
 class RssFeed extends PolymerElement {
    
   bool get applyAuthorStyles => true;
+//  @published var elem2;
+  
+  final List<RssFeedItem> rssFeedItemArr = toObservable(new List<RssFeedItem>());
+  DivElement bigspinnerElement;
+  DivElement itemsElement;
+  ItemBoxElement itemBoxElement;
+  
   
   RssFeed .created() : super.created() {
     
+    bigspinnerElement =this.shadowRoot.querySelector('#bigspinner');
+    itemsElement = this.shadowRoot.querySelector('#items');
+ 
+    Future<js.Proxy> result = jsonp.fetch(
+        
+//        uri: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%20%3D%20%22http%3A%2F%2Fquotidianohome.feedsportal.com%2Fc%2F33327%2Ff%2F565662%2Findex.rss%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=?"
+        uri: "http://146.185.151.26/redis?callback=?"
+    );
+    result.then((js.Proxy proxy) {
+
+      this.hidden = false;      
+      display(proxy);
+      
+    });
     
   }
   
-//  @observable List count;
-//  @observable List rssfeedarr;
-//  @observable bool start=false;
-//  @observable int count = 0;
-//  List<RssFeedItem> rssFeedItemArr = new List<RssFeedItem>();
-//  
-//  
-//  
-//  void increment() {
-//    count++;
-//  }
   
-//  void setUp(List<RssFeedItem> rssFeedItemArr) {
+  void display(var data) {
     
-//    count = rssFeedItemArr;
-//    print(count.length);
-//    print(count);
-//  Future<js.Proxy> result = jsonp.fetch(
-//      uri: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%20%3D%20%22http%3A%2F%2Fquotidianohome.feedsportal.com%2Fc%2F33327%2Ff%2F565662%2Findex.rss%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=?"
-//        
-//  );
-//  result.then((js.Proxy proxy) {
-//
-//    rssFeedItemArr = new List<RssFeedItem>();   
-//    var items = proxy["query"]["results"]["item"];
-//
-//    for (var i=0;i < items.length;i++){
-//      
-//      RssFeedItem rssFeedItem =new RssFeedItem();
-//      
-//      rssFeedItem.title = items[i]["title"];
-//      rssFeedItem.link = items[i]["link"];
-//      rssFeedItem.pubDate = items[i]["pubDate"];
-//      rssFeedItem.description = items[i]["description "];
-//      rssFeedItemArr.add(rssFeedItem);
-//      count++;
-//    }
-//       
-//    js.release(proxy);
-//    start = true;
-//    print(count);
-//  });
-//  
-//  
+    bigspinnerElement.hidden = true;
+    itemBoxElement = querySelector('#itembox'); 
+        
+    for (var i=0;i < data.length;i++){
+      
+      RssFeedItem rssFeedItem =new RssFeedItem();
+      
+      rssFeedItem.id = i;
+      rssFeedItem.title = data[i]["Title"];
+      rssFeedItem.imglink = data[i]["ImgLink"];
+//      rssFeedItem.pubDate = data[i]["PubDate"];
+//      rssFeedItem.description = data[i]["description"];
+      rssFeedItem.content = data[i]["Cont"];
+      rssFeedItemArr.add(rssFeedItem);
+      
+    }
+   
+  }
   
+  void selectItem(Event e){
+    
+    var id =  int.parse((e.currentTarget as Element).id);
+    RssFeedItem rssFeedItem = rssFeedItemArr[id];
 
+//    bigspinnerElement.hidden = true;
+    itemsElement.hidden = true;
+    itemBoxElement.showItem(rssFeedItem);
+     
+  }
+ 
+  void showItems(Event e){
+     
+//    this.hidden =false;
+     bigspinnerElement.hidden = true;  
+     itemsElement.hidden = false;
+         
+   }
+     
  
 }

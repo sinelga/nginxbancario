@@ -1,7 +1,7 @@
 library domains;
 
 class RssFeedItem {
-  
-  String title,link,description,pubDate;
+  int id;
+  String title,link,imglink,description,pubDate,content;
   
 }

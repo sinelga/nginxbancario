@@ -2813,3 +2813,1149 @@ build.dart --machine --changed=build/dartapp.css --changed=build/dartapp.dart.js
 [{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
 build.dart finished [1274 ms]
 
+---
+build.dart --machine --changed=web/dartapp.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":28,"charStart":570,"charEnd":576}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (template). Ignored.","line":29,"charStart":579,"charEnd":590}}]
+build.dart finished [1257 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (polymer-element). Ignored.","line":32,"charStart":657,"charEnd":675}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Unexpected end tag (polymer-element). Ignored.","line":32,"charStart":657,"charEnd":675}}]
+build.dart finished [1255 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1202 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1223 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1251 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1223 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1184 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1202 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1242 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1221 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1249 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1201 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1201 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1248 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1227 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1225 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1207 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1216 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1213 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1227 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1206 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1217 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1228 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1241 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1269 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1261 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1272 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1200 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1266 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1236 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1215 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1219 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1212 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1225 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":498,"charEnd":663}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":902,"charEnd":1068}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":1308,"charEnd":1474}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":1714,"charEnd":1877}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":2119,"charEnd":2282}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":498,"charEnd":663}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":902,"charEnd":1068}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":1308,"charEnd":1474}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":1714,"charEnd":1877}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"Named entity expected. Got none.","line":6,"charStart":2119,"charEnd":2282}}]
+build.dart finished [1338 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1275 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1267 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1241 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1235 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1264 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1236 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1240 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1270 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1288 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1278 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1485 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1311 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1254 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1257 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1412 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1236 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1262 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1251 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1214 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1290 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1241 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1232 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1245 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1272 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart --changed=web/rssfeed.html
+
+build.dart finished [1266 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1267 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1262 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1384 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1326 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1279 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1252 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1441 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1340 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1225 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1222 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1212 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1240 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1240 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1217 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1224 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1223 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1237 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1234 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1231 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1244 ms]
+
+---
+build.dart --machine --changed=web/domains.dart
+
+build.dart finished [1236 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1209 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [1513 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [1461 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart
+
+build.dart finished [1360 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart
+
+build.dart finished [1254 ms]
+
+---
+build.dart --machine --changed=web/dartapp.dart
+
+build.dart finished [1282 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1241 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1323 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1282 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1298 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1252 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1257 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1267 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1284 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1298 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1353 ms]
+
+---
+build.dart --machine --changed=web/domains.dart --changed=web/rssfeed.html
+
+build.dart finished [1417 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1361 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1299 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":29,"charStart":589,"charEnd":595}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":30,"charStart":596,"charEnd":602}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":29,"charStart":589,"charEnd":595}}]
+[{"method":"warning","params":{"file":"web/rssfeed.html","message":"End tag (div) seen too early. Expected other end tag.","line":30,"charStart":596,"charEnd":602}}]
+build.dart finished [1296 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1315 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1273 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1296 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1298 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1311 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1286 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1297 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1311 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1324 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1278 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1245 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1289 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1359 ms]
+
+---
+build.dart --machine --changed=web/domains.dart
+
+build.dart finished [1275 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1328 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1270 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1323 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1290 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1274 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1320 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1310 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1277 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1366 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1409 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1307 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1303 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1289 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1267 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1285 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1286 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1274 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+[{"method":"warning","params":{"file":"web/dartapp.html","message":"definition for Polymer element with tag name \"item-box\" not found.","line":27,"charStart":698,"charEnd":725}}]
+build.dart finished [1290 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+[{"method":"warning","params":{"file":"web/dartapp.html","message":"definition for Polymer element with tag name \"item-box\" not found.","line":27,"charStart":698,"charEnd":721}}]
+build.dart finished [1341 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1302 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1287 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1323 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1323 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1350 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1337 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1279 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1308 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1272 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1353 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1279 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1280 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1304 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1311 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1353 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1311 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1303 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1384 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1590 ms]
+
+---
+build.dart --machine --removed=build/dartapp.css --removed=build/dartapp.dart.js --removed=build/dartapp.dart.j...
+
+build.dart finished [1485 ms]
+
+---
+build.dart --machine --changed=build/dartapp.css --changed=build/dartapp.dart.js --changed=build/dartapp.dart.j...
+
+build.dart finished [1355 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1284 ms]
+
+---
+build.dart --machine --removed=build/dartapp.css --removed=build/dartapp.dart.js --removed=build/dartapp.dart.j...
+
+build.dart finished [1750 ms]
+
+---
+build.dart --machine --changed=build/dartapp.css --changed=build/dartapp.dart.js --changed=build/dartapp.dart.j...
+
+build.dart finished [1296 ms]
+
+---
+build.dart --machine --removed=build/dartapp.css --removed=build/dartapp.dart.js --removed=build/dartapp.dart.j...
+
+build.dart finished [1665 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1479 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [2080 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1431 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1364 ms]
+
+---
+build.dart --machine --changed=pubspec.yaml
+
+build.dart finished [1434 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [1317 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1606 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1481 ms]
+
+---
+build.dart --machine --changed=pubspec.yaml
+
+build.dart finished [1928 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1560 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1545 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1582 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1777 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1675 ms]
+
+---
+build.dart --machine --changed=pubspec.lock
+
+build.dart finished [1560 ms]
+
+---
+build.dart --machine --changed=pubspec.lock
+
+build.dart finished [1563 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.dart.js.map
+
+build.dart finished [1560 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.dart.precompiled.js
+
+build.dart finished [1565 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1888 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1823 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1571 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.html
+
+build.dart finished [1627 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1799 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1857 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.dart.js --changed=build/web/da...
+
+build.dart finished [1562 ms]
+
+---
+build.dart --machine --removed=web/dartapp.dart
+
+build.dart finished [1563 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.dart.js --removed=build/web/da...
+
+build.dart finished [1881 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [1603 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1556 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1584 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1552 ms]
+
+---
+build.dart --machine --changed=web/itembox.html
+
+build.dart finished [1562 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1584 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1552 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart --changed=web/rssfeed.dart
+
+build.dart finished [1606 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1577 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1578 ms]
+
+---
+build.dart --machine --changed=web/itembox.dart
+
+build.dart finished [1576 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1584 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1571 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1586 ms]
+
+---
+build.dart --machine --changed=web/dartapp.html
+
+build.dart finished [1681 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1606 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1556 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1577 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1578 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1578 ms]
+
+---
+build.dart --machine --changed=web/dartapp.css
+
+build.dart finished [1596 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1572 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.html --removed=build/web/darta...
+
+build.dart finished [2041 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [1590 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1572 ms]
+
+---
+build.dart --machine --changed=web/shadow_dom.debug.js
+
+build.dart finished [1568 ms]
+
+---
+build.dart --machine --changed=build/web/shadow_dom.debug.js
+
+build.dart finished [1572 ms]
+
+---
+build.dart --machine --removed=build/web/shadow_dom.debug.js
+
+build.dart finished [1597 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1556 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1601 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1547 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1590 ms]
+
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1578 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.html
+
+build.dart finished [1628 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.html
+
+build.dart finished [1608 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [3653 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [1749 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.html --removed=build/web/darta...
+
+build.dart finished [2157 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [2273 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html_bootstrap.dart.js --chang...
+
+build.dart finished [1623 ms]
+

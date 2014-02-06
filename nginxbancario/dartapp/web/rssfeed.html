@@ -1,31 +1,32 @@
-
 <polymer-element name="rss-feed" >
+
   <template>
+  
+  
+  <div id='bigspinner' class='bigspinner'>
+  <i class="fa fa-spinner fa-spin fa-5x"></i>Aspetta...
+</div>
+  
+  <div id='items'>
+  <template repeat="{{rssfeed in rssFeedItemArr}}">
  
- <!--  
-      <div class="panel panel-default">
-      <div class="panel-heading">Politica</div>
-      
-      <div class="panel-body">
-        <p></p>
-      </div>
-      
-      <template repeat="{{rssfeed in rssfeedarr}}">
-      
-             <span class="help-block">
-        {{rssfeed.pubDate}}
-         </span>
-        <div class="well">
-        <dl>
-          <dt> {{rssfeed.title}}</dt>
-          <dd> {{rssfeed.description}} </dd> 
-        </dl>
-        </div>
- --> 
-        
-      </template>   
-          
-      </div>
+ <div class="media" on-click="{{selectItem}}" id='{{rssfeed.id}}'>
+  <a class="pull-left">
+    <img class="media-object imgSmall200" src='http://127.0.0.1:8080/resize/200x200/{{rssfeed.imglink}}' alt="...">
+  </a>
+  <div class="media-body">
+    <div class='title'>
+    {{rssfeed.title}}
+    <i class="fa fa-chevron-circle-right fa-2x pull-right"></i>
+    </div>
+  
+  </div>
+</div> 
+ </template>   
+
+</div>
+
   </template>
+  
   <script type="application/dart" src="rssfeed.dart"></script>
 </polymer-element>
