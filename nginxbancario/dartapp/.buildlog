@@ -3959,3 +3959,43 @@ build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp
 
 build.dart finished [1623 ms]
 
+---
+build.dart --machine --removed=build/web/shadow_dom.debug.js
+
+build.dart finished [1773 ms]
+
+---
+build.dart --machine --removed=web/shadow_dom.debug.js
+
+build.dart finished [1662 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.html --removed=build/web/darta...
+
+build.dart finished [2494 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [2015 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1607 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.html
+
+build.dart finished [1605 ms]
+
+---
+build.dart --machine --removed=build/web/dartapp.css --removed=build/web/dartapp.html --removed=build/web/darta...
+
+build.dart finished [2196 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [5089 ms]
+
