@@ -3999,3 +3999,13 @@ build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp
 
 build.dart finished [5089 ms]
 
+---
+build.dart --machine --changed=usefull.bash
+
+build.dart finished [1649 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.html
+
+build.dart finished [1638 ms]
+
