@@ -1,0 +1,91 @@
+<!DOCTYPE html><html><head><script src="packages/shadow_dom/shadow_dom.debug.js"></script>
+<script src="packages/custom_element/custom-elements.debug.js"></script>
+<script src="packages/browser/interop.js"></script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+<title>Economia e Finanza </title>
+
+  
+      <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.0/css/bootstrap.min.css">
+
+
+<link rel="stylesheet" href="dartapp.css">
+
+    <script src="dartapp.html_bootstrap.dart.js"></script>
+    
+</head>
+<body><polymer-element name="rss-feed">
+
+  <template>
+  
+  
+  <div id="bigspinner" class="bigspinner">
+  <i class="fa fa-spinner fa-spin fa-5x"></i>Aspetta...
+</div>
+  
+  <div id="items">
+  <template repeat="{{rssfeed in rssFeedItemArr}}">
+ 
+ <div class="media" on-click="{{selectItem}}" id="{{rssfeed.id}}">
+  <a class="pull-left">
+    <img class="media-object imgSmall200" src="http://127.0.0.1:8080/resize/200x200/{{rssfeed.imglink}}" alt="...">
+  </a>
+  <div class="media-body">
+    <div class="title">
+    {{rssfeed.title}}
+    <i class="fa fa-chevron-circle-right fa-2x pull-right"></i>
+    </div>
+  
+  </div>
+</div> 
+ </template>   
+
+</div>
+
+  </template>
+  
+  
+</polymer-element><polymer-element name="item-box">
+  <template>
+    <style>
+ 
+    </style> 
+  <button type="button" on-click="{{closeItem}}" class="close pull-right" aria-hidden="true"><i class="fa fa-times-circle-o fa-lg"></i></button>
+  <div class="page-header text-center">{{title}}</div>
+      <img src="{{imglink }}" alt="" class="img-rounded center-block imgBig468">
+      <div class="well">{{cont}}</div>
+
+  </template>
+  
+</polymer-element>
+
+<div class="row">
+  <div class="col-md-8">
+ 
+      <rss-feed id="rssfeed"></rss-feed>
+      <item-box id="itembox"></item-box>
+ </div>
+ <div class="col-md-4 rightbox">
+ 
+  <script async="" src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- skyscraper120x600FI_fifinance -->
+<ins class="adsbygoogle" style="display:inline-block;width:300px;height:600px" data-ad-client="ca-pub-4265026941264081" data-ad-slot="9526732259"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+ 
+ </div>
+ </div>
+ 
+ 
+     
+ 
+ 
+  <script src="https://code.jquery.com/jquery.js"></script>
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.0/js/bootstrap.min.js"></script>
+
+
+</body></html>

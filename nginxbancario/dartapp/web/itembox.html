@@ -1,0 +1,13 @@
+<polymer-element name="item-box">
+  <template>
+    <style>
+ 
+    </style> 
+  <button type="button" on-click="{{closeItem}}" class="close pull-right" aria-hidden="true"><i class="fa fa-times-circle-o fa-lg"></i></button>
+  <div class="page-header text-center">{{title}}</div>
+      <img src="{{imglink }}" alt="" class="img-rounded center-block imgBig468">
+      <div class="well">{{cont}}</div>
+
+  </template>
+  <script type="application/dart" src="itembox.dart"></script>
+</polymer-element>
