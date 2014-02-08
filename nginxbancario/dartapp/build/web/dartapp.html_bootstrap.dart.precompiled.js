@@ -41999,7 +41999,7 @@ FB:[function(a,b){J.x0(a.ya,!0)
 J.x0(a.Fu,!1)},"call$1","gjbO",2,0,6509,321,"showItems"],
 Td:[function(a){a.ya=(a.shadowRoot||a.webkitShadowRoot).querySelector("#bigspinner")
 a.Fu=(a.shadowRoot||a.webkitShadowRoot).querySelector("#items")
-J.oA(Z.Lt(C.xR,null,"http://146.185.151.26/redis?callback=?",null),new E.CX(a))},null,null,0,0,391,"created"],
+J.oA(Z.Lt(C.xR,null,"http://146.185.151.26/redis?redisid=it_IT:news:Home&callback=?",null),new E.CX(a))},null,null,0,0,391,"created"],
 "@":function(){return[C.mOT]},
 static:{G7i:[function(a){var z,y,x,w,v
 z=H.K6([],[S.Vd])

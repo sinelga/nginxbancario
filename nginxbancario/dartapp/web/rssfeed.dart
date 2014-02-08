@@ -5,15 +5,13 @@ import 'dart:async';
 import "package:js/js.dart" as js;
 import "package:jsonp/jsonp.dart" as jsonp;
 import 'itembox.dart';
-//import 'package:html5lib/parser.dart' show parse;
-//import 'package:html5lib/dom.dart';
+
 
 
 @CustomTag('rss-feed')
 class RssFeed extends PolymerElement {
    
   bool get applyAuthorStyles => true;
-//  @published var elem2;
   
   final List<RssFeedItem> rssFeedItemArr = toObservable(new List<RssFeedItem>());
   DivElement bigspinnerElement;
@@ -29,7 +27,7 @@ class RssFeed extends PolymerElement {
     Future<js.Proxy> result = jsonp.fetch(
         
 //        uri: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20rss%20where%20url%20%3D%20%22http%3A%2F%2Fquotidianohome.feedsportal.com%2Fc%2F33327%2Ff%2F565662%2Findex.rss%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&callback=?"
-        uri: "http://146.185.151.26/redis?callback=?"
+        uri: "http://146.185.151.26/redis?redisid=it_IT:news:Home&callback=?"
     );
     result.then((js.Proxy proxy) {
 
@@ -67,15 +65,13 @@ class RssFeed extends PolymerElement {
     var id =  int.parse((e.currentTarget as Element).id);
     RssFeedItem rssFeedItem = rssFeedItemArr[id];
 
-//    bigspinnerElement.hidden = true;
     itemsElement.hidden = true;
     itemBoxElement.showItem(rssFeedItem);
      
   }
  
   void showItems(Event e){
-     
-//    this.hidden =false;
+ 
      bigspinnerElement.hidden = true;  
      itemsElement.hidden = false;
          

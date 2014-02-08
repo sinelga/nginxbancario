@@ -4009,3 +4009,38 @@ build.dart --machine --changed=build/web/dartapp.html
 
 build.dart finished [1638 ms]
 
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [4690 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1718 ms]
+
+---
+build.dart --machine --changed=web/rssfeed.dart
+
+build.dart finished [1551 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [1663 ms]
+
+---
+build.dart --machine --full
+
+build.dart finished [9934 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.css --changed=build/web/dartapp.html --changed=build/web/darta...
+
+build.dart finished [1654 ms]
+
+---
+build.dart --machine --changed=build/web/dartapp.html
+
+build.dart finished [1607 ms]
+
