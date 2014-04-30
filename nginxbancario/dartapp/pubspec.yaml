@@ -7,4 +7,4 @@ dependencies:
     intl: any
 transformers:
 - polymer:
-    entry_points: web/dartapp.html   
+    entry_points: web/index.html   
